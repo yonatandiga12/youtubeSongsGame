@@ -89,28 +89,29 @@ def get_video_info(video_id):
     }
 
 def get_youtube_videos_with_chatgpt(prompt):
-    """Use ChatGPT to get YouTube video suggestions with song details"""
+    """Use ChatGPT to get song suggestions, then search YouTube for those songs"""
     try:
-        system_prompt = """You are a helpful assistant that suggests YouTube videos and provides song information.
-        For each video, provide:
-        1. A YouTube video URL
-        2. The song title
-        3. The movie/show/game it's from (if applicable)
-        4. The artist/band name
-        
+        # First, use ChatGPT to suggest songs based on the prompt
+        system_prompt = """You are a helpful assistant that suggests songs based on user prompts.
+        For each suggestion, provide:
+        1. The song title
+        2. The movie/show/game it's from (if applicable)
+        3. The artist/band name
+        4. link to youtube
+
         Return the information in this exact JSON format:
         [
             {
-                "url": "https://www.youtube.com/watch?v=VIDEO_ID",
                 "title": "Song Title",
                 "source": "Movie/Show/Game Name",
-                "artist": "Artist/Band Name"
+                "artist": "Artist/Band Name",
+                "link": "url link"
             }
         ]
         
-        Return exactly 10 videos. Make sure the JSON is valid."""
+        Return exactly 10 songs. Make sure the JSON is valid."""
         
-        user_prompt = f"Find 10 YouTube videos related to: {prompt}. Return the information in the specified JSON format."
+        user_prompt = f"Suggest 10 songs related to: {prompt}"
         
         from openai import OpenAI
         
@@ -136,19 +137,23 @@ def get_youtube_videos_with_chatgpt(prompt):
         # Try to parse JSON response
         try:
             import json
-            video_data = json.loads(content)
+            song_data = json.loads(content)
             video_ids = []
             song_details = []
             
-            for item in video_data:
-                video_id = extract_youtube_links(item.get('url', ''))
-                if video_id:
-                    video_ids.append(video_id[0])
+            # Process each song suggested by GPT
+            for song_info in song_data:
+                # Extract video ID from the link provided by GPT
+                video_link = song_info.get('link', '')
+                extracted_ids = extract_youtube_links(video_link)
+                
+                if extracted_ids:
+                    video_ids.append(extracted_ids[0])
                     song_details.append({
-                        'title': item.get('title', 'Unknown Title'),
-                        'source': item.get('source', 'Unknown Source'),
-                        'artist': item.get('artist', 'Unknown Artist'),
-                        'video_id': video_id[0]
+                        'title': song_info.get('title', 'Unknown Title'),
+                        'source': song_info.get('source', 'Unknown Source'),
+                        'artist': song_info.get('artist', 'Unknown Artist'),
+                        'video_id': extracted_ids[0]
                     })
             
             # Store song details in session state
@@ -158,15 +163,7 @@ def get_youtube_videos_with_chatgpt(prompt):
             
         except json.JSONDecodeError:
             st.warning("ChatGPT didn't return valid JSON. Using fallback method...")
-            # Fallback to URL extraction only
-            video_ids = extract_youtube_links(content)
-            return video_ids[:10]
-        
-    except Exception as e:
-        st.error(f"Error with ChatGPT API: {e}")
-        # Fallback to direct YouTube search
-        st.info("Using YouTube search as fallback...")
-        try:
+            # Fallback to direct YouTube search
             search = VideosSearch(prompt, limit=10)
             results = search.result()
             video_ids = []
@@ -178,9 +175,10 @@ def get_youtube_videos_with_chatgpt(prompt):
                     video_ids.append(extracted_ids[0])
             
             return video_ids[:10]
-        except Exception as e2:
-            st.error(f"Error with YouTube search: {e2}")
-            return []
+        
+    except Exception as e:
+        st.error(f"Error: {e}")
+        return []
 
 def main():
     # Main header
