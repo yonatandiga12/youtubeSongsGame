@@ -222,7 +222,7 @@ def main():
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        st.markdown('<h2 class="sub-header">🎯 Enter Your Video Prompt</h2>', unsafe_allow_html=True)
+        st.markdown('<div class="centered-text"><h2 class="sub-header">🎯 Enter Your Video Prompt</h2>', unsafe_allow_html=True)
         
         # Prompt input
         with st.container():
