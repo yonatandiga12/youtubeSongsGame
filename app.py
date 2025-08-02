@@ -320,17 +320,7 @@ def main():
                         else:
                             st.error("❌ No songs found. Please try a different prompt.")
     
-    with col2:
-        st.markdown('<h2 class="sub-header" style="text-align: center;">📊 Stats</h2>', unsafe_allow_html=True)
-        if 'videos' in st.session_state:
-            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-            st.metric("🎵 Songs Found", len(st.session_state.videos))
-            st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-            st.metric("🎵 Songs Found", 0)
-            st.markdown('</div>', unsafe_allow_html=True)
-    
+
     # Display single song for guessing game
     if 'videos' in st.session_state and st.session_state.videos:
         st.markdown('<h2 class="sub-header" style="text-align: center;">🎵 Song Guessing Game</h2>', unsafe_allow_html=True)
