@@ -11,9 +11,11 @@ load_dotenv()
 
 # Configure OpenAI - try Streamlit secrets first, then environment variables
 if 'OPENAI_API_KEY' in st.secrets:
-    openai.api_key = st.secrets["OPENAI_API_KEY"]
+    OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+elif os.getenv("OPENAI_API_KEY"):
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 else:
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    OPENAI_API_KEY = None
 
 # Page configuration
 st.set_page_config(
@@ -106,7 +108,10 @@ def get_youtube_videos_with_chatgpt(prompt):
         
         user_prompt = f"Find 10 YouTube videos related to: {prompt}. Return only the YouTube URLs, one per line."
         
-        response = openai.ChatCompletion.create(
+        from openai import OpenAI
+        
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -162,7 +167,7 @@ def main():
         st.markdown("### ⚙️ Configuration")
         
         # API Key input (only show if not in secrets)
-        if 'OPENAI_API_KEY' not in st.secrets:
+        if 'OPENAI_API_KEY' not in st.secrets and not os.getenv("OPENAI_API_KEY"):
             api_key = st.text_input(
                 "OpenAI API Key",
                 type="password",
@@ -170,7 +175,7 @@ def main():
             )
             
             if api_key:
-                openai.api_key = api_key
+                OPENAI_API_KEY = api_key
         else:
             st.success("✅ API key loaded from secrets")
         
@@ -213,7 +218,7 @@ def main():
         if st.button("🎲 Generate Videos", type="primary", use_container_width=True):
             if not prompt:
                 st.warning("Please enter a prompt first!")
-            elif not openai.api_key:
+            elif not OPENAI_API_KEY:
                 st.warning("Please enter your OpenAI API key in the sidebar!")
             else:
                 with st.spinner("🎵 Generating your video collection..."):

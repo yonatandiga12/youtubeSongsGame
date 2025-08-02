@@ -2,6 +2,12 @@
 
 A fun and interactive Streamlit app that uses ChatGPT to generate personalized YouTube video collections based on your prompts. Discover and play videos directly within the app!
 
+## 🌐 **Live Demo**
+
+🎮 **[Play the YouTube Video Game Now!](https://youtubesongsgame.streamlit.app/)**
+
+---
+
 ## ✨ Features
 
 - **AI-Powered Video Discovery**: Uses ChatGPT to find relevant YouTube videos based on your prompts

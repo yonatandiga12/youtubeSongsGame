@@ -13,7 +13,7 @@ def test_imports():
         return False
     
     try:
-        import openai
+        from openai import OpenAI
         print("✅ openai imported successfully")
     except ImportError as e:
         print(f"❌ openai import failed: {e}")
