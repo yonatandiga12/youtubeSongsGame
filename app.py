@@ -81,17 +81,28 @@ def get_video_info(video_id):
                 'available': True
             }
         else:
-            return {
-                'title': f'Video {video_id[:8]}...',
-                'video_id': video_id,
-                'available': False
-            }
+            # Try alternative method - check if video page exists
+            video_url = f"https://www.youtube.com/watch?v={video_id}"
+            response = requests.head(video_url, timeout=5, allow_redirects=True)
+            
+            if response.status_code == 200:
+                return {
+                    'title': f'Video {video_id[:8]}...',
+                    'video_id': video_id,
+                    'available': True
+                }
+            else:
+                return {
+                    'title': f'Video {video_id[:8]}...',
+                    'video_id': video_id,
+                    'available': False
+                }
     except Exception as e:
-        # If oEmbed fails, video might not be available
+        # If all methods fail, assume video is available (let YouTube handle it)
         return {
             'title': f'Video {video_id[:8]}...',
             'video_id': video_id,
-            'available': False
+            'available': True  # Changed to True to be less restrictive
         }
 
 def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
@@ -254,6 +265,10 @@ def main():
                             # Store videos in session state
                             st.session_state.videos = []
                             st.session_state.current_song_index = 0
+                            
+                            # Initialize persistent song list
+                            st.session_state.all_song_details = []
+                            
                             for video_id in video_ids:
                                 video_info = get_video_info(video_id)
                                 st.session_state.videos.append(video_info)
@@ -269,9 +284,14 @@ def main():
                     st.info("Please add your API key in Streamlit Cloud Settings → Secrets")
                 else:
                     with st.spinner("🎵 Generating new songs..."):
-                        # Get existing songs to exclude them
-                        exclude_songs = st.session_state.get('song_details', [])
-                        video_ids = get_youtube_videos_with_chatgpt(prompt, exclude_songs)
+                        # Get ALL existing songs to exclude them (persistent across multiple presses)
+                        all_existing_songs = []
+                        if 'all_song_details' in st.session_state:
+                            all_existing_songs.extend(st.session_state.all_song_details)
+                        if 'song_details' in st.session_state:
+                            all_existing_songs.extend(st.session_state.song_details)
+                        
+                        video_ids = get_youtube_videos_with_chatgpt(prompt, all_existing_songs)
                         
                         if video_ids:
                             st.success(f"🎉 Found {len(video_ids)} new songs!")
@@ -279,6 +299,13 @@ def main():
                             # Store videos in session state
                             st.session_state.videos = []
                             st.session_state.current_song_index = 0
+                            
+                            # Move current songs to all_song_details for persistence
+                            if 'song_details' in st.session_state:
+                                if 'all_song_details' not in st.session_state:
+                                    st.session_state.all_song_details = []
+                                st.session_state.all_song_details.extend(st.session_state.song_details)
+                            
                             for video_id in video_ids:
                                 video_info = get_video_info(video_id)
                                 st.session_state.videos.append(video_info)
@@ -346,10 +373,15 @@ def main():
                     **👤 Artist:** {song_info['artist']}
                     """)
             
-            # Auto-play current song
-            st.session_state.selected_video = current_video['video_id']
-            st.session_state.current_song_number = current_index + 1
-            st.session_state.auto_play = True
+            # Play button for manual control
+            if st.button("▶️ Play Song", key="play_current", use_container_width=True):
+                st.session_state.selected_video = current_video['video_id']
+                st.session_state.current_song_number = current_index + 1
+                st.session_state.auto_play = True
+                st.rerun()
+    
+    # Add spacing to move video player lower
+    st.markdown("<br><br><br><br>", unsafe_allow_html=True)
     
     # Video player
     if 'selected_video' in st.session_state:
