@@ -276,16 +276,21 @@ def main():
         video_id = st.session_state.selected_video
         embed_url = f"https://www.youtube.com/embed/{video_id}"
         
-        # Display video using iframe
+        # Display video using iframe with better compatibility
         st.markdown(f"""
-        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%;">
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <iframe 
-                src="{embed_url}" 
-                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" 
+                src="{embed_url}?rel=0&modestbranding=1" 
+                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; border-radius: 10px;" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                 allowfullscreen>
             </iframe>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Alternative: Direct link
+        st.markdown("---")
+        st.markdown("**Alternative:** [Open in YouTube](https://www.youtube.com/watch?v=" + video_id + ")")
         
         # Close button
         if st.button("❌ Close Player"):
