@@ -81,28 +81,17 @@ def get_video_info(video_id):
                 'available': True
             }
         else:
-            # Try alternative method - check if video page exists
-            video_url = f"https://www.youtube.com/watch?v={video_id}"
-            response = requests.head(video_url, timeout=5, allow_redirects=True)
-            
-            if response.status_code == 200:
-                return {
-                    'title': f'Video {video_id[:8]}...',
-                    'video_id': video_id,
-                    'available': True
-                }
-            else:
-                return {
-                    'title': f'Video {video_id[:8]}...',
-                    'video_id': video_id,
-                    'available': False
-                }
+            return {
+                'title': f'Video {video_id[:8]}...',
+                'video_id': video_id,
+                'available': False
+            }
     except Exception as e:
-        # If all methods fail, assume video is NOT available
+        # If oEmbed fails, video might not be available
         return {
             'title': f'Video {video_id[:8]}...',
             'video_id': video_id,
-            'available': False  # Changed back to False to be more strict
+            'available': False
         }
 
 def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
@@ -336,8 +325,11 @@ def main():
             # Song counter
             st.markdown(f'<div style="text-align: center;"><strong>Song {current_index + 1} of {total_songs}</strong></div>', unsafe_allow_html=True)
             
-            # Video availability check will be done via JavaScript
-            pass
+            # Check video availability
+            if not current_video.get('available', True):
+                st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+                st.warning("⚠️ This video may not be available. Trying to play anyway...")
+                st.markdown('</div>', unsafe_allow_html=True)
             
 
             
@@ -397,8 +389,14 @@ def main():
         song_number = st.session_state.get('current_song_number', '?')
         st.markdown(f'<h2 class="sub-header" style="text-align: center;">🎵 Now Playing: Song #{song_number}</h2>', unsafe_allow_html=True)
         
-        # Dynamic warning will be shown via JavaScript if video fails
-        pass
+        # Check if current video is available
+        current_index = st.session_state.get('current_song_index', 0)
+        if 'videos' in st.session_state and current_index < len(st.session_state.videos):
+            current_video = st.session_state.videos[current_index]
+            if not current_video.get('available', True):
+                st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+                st.warning("⚠️ This video may not be available. If it doesn't play, try the alternative link below.")
+                st.markdown('</div>', unsafe_allow_html=True)
         
         # Create YouTube embed URL with autoplay
         video_id = st.session_state.selected_video
@@ -408,77 +406,36 @@ def main():
         # Reset autoplay flag
         st.session_state.auto_play = False
         
-        # Display video using iframe with JavaScript availability check
+        # Display video using iframe
         st.markdown(f"""
         <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <iframe 
-                id="youtube-player"
                 src="{embed_url}" 
                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; border-radius: 10px;" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                 allowfullscreen>
             </iframe>
         </div>
-        
-        <div id="video-warning" style="display: none; text-align: center; padding: 15px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; margin: 15px 0;">
-            <h4 style="color: #721c24; margin: 0 0 10px 0;">⚠️ Video Not Available</h4>
-            <p style="color: #721c24; margin: 0;"><strong>This video appears to be unavailable.</strong><br>Try the "Open in YouTube" link below.</p>
-        </div>
-        
-        <script>
-        // Check video availability after 2 seconds
-        setTimeout(function() {{
-            var iframe = document.getElementById('youtube-player');
-            var warning = document.getElementById('video-warning');
-            
-            // Try to detect if video is playing or has errors
-            try {{
-                // Check if iframe is loaded and has content
-                if (iframe && iframe.contentWindow) {{
-                    // Listen for messages from YouTube iframe
-                    window.addEventListener('message', function(event) {{
-                        if (event.origin === 'https://www.youtube.com') {{
-                            if (event.data && event.data.event === 'onStateChange') {{
-                                if (event.data.info === -1) {{
-                                    // Video is unavailable or has error
-                                    warning.style.display = 'block';
-                                }}
-                            }}
-                        }}
-                    }});
-                    
-                    // Alternative check: look for error indicators in iframe
-                    setTimeout(function() {{
-                        try {{
-                            var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                            if (iframeDoc) {{
-                                var errorElements = iframeDoc.querySelectorAll('[class*="error"], [class*="unavailable"], [class*="not-available"]');
-                                if (errorElements.length > 0) {{
-                                    warning.style.display = 'block';
-                                }}
-                            }}
-                        }} catch (e) {{
-                            // Cross-origin restrictions, try alternative method
-                            var iframeSrc = iframe.src;
-                            if (iframeSrc.includes('error') || iframeSrc.includes('unavailable')) {{
-                                warning.style.display = 'block';
-                            }}
-                        }}
-                    }}, 3000);
-                }}
-            }} catch (e) {{
-                // If we can't access iframe content, show warning as precaution
-                warning.style.display = 'block';
-            }}
-        }}, 2000);
-        </script>
         """, unsafe_allow_html=True)
         
         # Alternative: Direct link - more prominent
         st.markdown("---")
+        
+        # Try next song button
+        st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+        if st.button("🔄 Try Next Song", key="try_next", use_container_width=True):
+            if current_index < total_songs - 1:
+                st.session_state.current_song_index = current_index + 1
+                st.session_state.selected_video = st.session_state.videos[current_index + 1]['video_id']
+                st.session_state.current_song_number = current_index + 2
+                st.session_state.auto_play = True
+                st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # YouTube link section
         st.markdown('<div style="text-align: center; padding: 20px; background-color: #f0f2f6; border-radius: 10px; margin: 20px 0;">', unsafe_allow_html=True)
-        st.markdown('<h3 style="color: #ff6b6b;">🎬 Video Not Playing?</h3>', unsafe_allow_html=True)
-        st.markdown('<p><strong>Try opening the video directly on YouTube:</strong></p>', unsafe_allow_html=True)
+        st.markdown('<h3 style="color: #ff6b6b;">🎬 Open in YouTube</h3>', unsafe_allow_html=True)
+        st.markdown('<p><strong>If the video doesn\'t play, try opening it directly on YouTube:</strong></p>', unsafe_allow_html=True)
         st.markdown('<a href="https://www.youtube.com/watch?v=' + video_id + '" target="_blank" style="background-color: #ff0000; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">▶️ Open in YouTube</a>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
