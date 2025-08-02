@@ -208,7 +208,7 @@ def main():
     
     # Sidebar for configuration
     with st.sidebar:
-        st.markdown("### ⚙️ Configuration")
+        #st.markdown("### ⚙️ Configuration")
         
 
         st.markdown("### 🎮 How to Play")
@@ -321,16 +321,20 @@ def main():
                             st.error("❌ No songs found. Please try a different prompt.")
     
     with col2:
-        st.markdown('<h2 class="sub-header">📊 Stats</h2>', unsafe_allow_html=True)
+        st.markdown('<h2 class="sub-header" style="text-align: center;">📊 Stats</h2>', unsafe_allow_html=True)
         if 'videos' in st.session_state:
-            st.metric("Videos Found", len(st.session_state.videos))
+            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+            st.metric("🎵 Songs Found", len(st.session_state.videos))
+            st.markdown('</div>', unsafe_allow_html=True)
         else:
-            st.metric("Videos Found", 0)
+            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+            st.metric("🎵 Songs Found", 0)
+            st.markdown('</div>', unsafe_allow_html=True)
     
     # Display single song for guessing game
     if 'videos' in st.session_state and st.session_state.videos:
-        st.markdown('<h2 class="sub-header">🎵 Song Guessing Game</h2>', unsafe_allow_html=True)
-        st.markdown("**Listen to each song and try to guess what it is and where it's from!**")
+        st.markdown('<h2 class="sub-header" style="text-align: center;">🎵 Song Guessing Game</h2>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center;"><strong>Listen to each song and try to guess what it is and where it\'s from!</strong></div>', unsafe_allow_html=True)
         
         # Get current song index
         current_index = st.session_state.get('current_song_index', 0)
@@ -340,11 +344,13 @@ def main():
             current_video = st.session_state.videos[current_index]
             
             # Song counter
-            st.markdown(f"**Song {current_index + 1} of {total_songs}**")
+            st.markdown(f'<div style="text-align: center;"><strong>Song {current_index + 1} of {total_songs}</strong></div>', unsafe_allow_html=True)
             
             # Check video availability
             if not current_video.get('available', True):
+                st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
                 st.warning("⚠️ This video may not be available. Trying to play anyway...")
+                st.markdown('</div>', unsafe_allow_html=True)
             
             # Play and reveal buttons
             col1, col2, col3 = st.columns([1, 1, 1])
@@ -376,10 +382,12 @@ def main():
                 if current_index < len(st.session_state.song_details):
                     song_info = st.session_state.song_details[current_index]
                     st.markdown(f"""
-                    **🎵 {song_info['title']}**  
-                    **🎬 From:** {song_info['source']}  
-                    **👤 Artist:** {song_info['artist']}
-                    """)
+                    <div style="text-align: center;">
+                    <strong>🎵 {song_info['title']}</strong><br>
+                    <strong>🎬 From:</strong> {song_info['source']}<br>
+                    <strong>👤 Artist:</strong> {song_info['artist']}
+                    </div>
+                    """, unsafe_allow_html=True)
             
             # Play button for manual control
             if st.button("▶️ Play Song", key="play_current", use_container_width=True):
@@ -394,7 +402,16 @@ def main():
     # Video player
     if 'selected_video' in st.session_state:
         song_number = st.session_state.get('current_song_number', '?')
-        st.markdown(f'<h2 class="sub-header">🎵 Now Playing: Song #{song_number}</h2>', unsafe_allow_html=True)
+        st.markdown(f'<h2 class="sub-header" style="text-align: center;">🎵 Now Playing: Song #{song_number}</h2>', unsafe_allow_html=True)
+        
+        # Check if current video is available
+        current_index = st.session_state.get('current_song_index', 0)
+        if 'videos' in st.session_state and current_index < len(st.session_state.videos):
+            current_video = st.session_state.videos[current_index]
+            if not current_video.get('available', True):
+                st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+                st.warning("⚠️ This video may not be available. If it doesn't play, try the alternative link below.")
+                st.markdown('</div>', unsafe_allow_html=True)
         
         # Create YouTube embed URL with autoplay
         video_id = st.session_state.selected_video
@@ -418,7 +435,7 @@ def main():
         
         # Alternative: Direct link
         st.markdown("---")
-        st.markdown("**Alternative:** [Open in YouTube](https://www.youtube.com/watch?v=" + video_id + ")")
+        st.markdown('<div style="text-align: center;"><strong>Alternative:</strong> <a href="https://www.youtube.com/watch?v=' + video_id + '" target="_blank">Open in YouTube</a></div>', unsafe_allow_html=True)
         
         # Close button
         if st.button("❌ Close Player"):
