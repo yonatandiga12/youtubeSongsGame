@@ -64,40 +64,53 @@ def extract_youtube_links(text):
     return list(set(video_ids))  # Remove duplicates
 
 def get_video_info(video_id):
-    """Get video information using YouTube Search Python"""
+    """Get basic video information"""
     try:
-        search = VideosSearch(f"https://www.youtube.com/watch?v={video_id}")
-        results = search.result()
-        if results and 'result' in results and len(results['result']) > 0:
-            video = results['result'][0]
+        # Use a simpler approach to avoid the proxies issue
+        import requests
+        
+        # Get video info from YouTube oEmbed API
+        oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
+        response = requests.get(oembed_url, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
             return {
-                'title': video.get('title', 'Unknown Title'),
-                'duration': video.get('duration', 'Unknown Duration'),
-                'viewCount': video.get('viewCount', {}).get('text', 'Unknown Views'),
-                'channel': video.get('channel', {}).get('name', 'Unknown Channel'),
-                'thumbnail': video.get('thumbnails', [{}])[0].get('url', ''),
+                'title': data.get('title', 'Unknown Title'),
                 'video_id': video_id
             }
     except Exception as e:
-        st.error(f"Error fetching video info: {e}")
+        # If oEmbed fails, just return basic info
+        pass
     
     return {
-        'title': 'Unknown Title',
-        'duration': 'Unknown Duration',
-        'viewCount': 'Unknown Views',
-        'channel': 'Unknown Channel',
-        'thumbnail': '',
+        'title': f'Video {video_id[:8]}...',
         'video_id': video_id
     }
 
 def get_youtube_videos_with_chatgpt(prompt):
-    """Use ChatGPT to get YouTube video suggestions"""
+    """Use ChatGPT to get YouTube video suggestions with song details"""
     try:
-        system_prompt = """You are a helpful assistant that suggests YouTube videos based on user prompts. 
-        For each suggestion, provide a YouTube video URL. Return exactly 10 video URLs, one per line.
-        Only return the URLs, no additional text or formatting."""
+        system_prompt = """You are a helpful assistant that suggests YouTube videos and provides song information.
+        For each video, provide:
+        1. A YouTube video URL
+        2. The song title
+        3. The movie/show/game it's from (if applicable)
+        4. The artist/band name
         
-        user_prompt = f"Find 10 YouTube videos related to: {prompt}. Return only the YouTube URLs, one per line."
+        Return the information in this exact JSON format:
+        [
+            {
+                "url": "https://www.youtube.com/watch?v=VIDEO_ID",
+                "title": "Song Title",
+                "source": "Movie/Show/Game Name",
+                "artist": "Artist/Band Name"
+            }
+        ]
+        
+        Return exactly 10 videos. Make sure the JSON is valid."""
+        
+        user_prompt = f"Find 10 YouTube videos related to: {prompt}. Return the information in the specified JSON format."
         
         from openai import OpenAI
         
@@ -114,26 +127,40 @@ def get_youtube_videos_with_chatgpt(prompt):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            max_tokens=500,
+            max_tokens=1000,
             temperature=0.7
         )
         
         content = response.choices[0].message.content.strip()
-        video_ids = extract_youtube_links(content)
         
-        # If ChatGPT didn't provide enough links, use YouTube search as fallback
-        if len(video_ids) < 10:
-            st.info("ChatGPT didn't provide enough links. Using YouTube search as fallback...")
-            search = VideosSearch(prompt, limit=10)
-            results = search.result()
+        # Try to parse JSON response
+        try:
+            import json
+            video_data = json.loads(content)
+            video_ids = []
+            song_details = []
             
-            for video in results.get('result', []):
-                video_url = video.get('link', '')
-                video_id = extract_youtube_links(video_url)
-                if video_id and video_id[0] not in video_ids:
+            for item in video_data:
+                video_id = extract_youtube_links(item.get('url', ''))
+                if video_id:
                     video_ids.append(video_id[0])
-        
-        return video_ids[:10]  # Return max 10 videos
+                    song_details.append({
+                        'title': item.get('title', 'Unknown Title'),
+                        'source': item.get('source', 'Unknown Source'),
+                        'artist': item.get('artist', 'Unknown Artist'),
+                        'video_id': video_id[0]
+                    })
+            
+            # Store song details in session state
+            st.session_state.song_details = song_details
+            
+            return video_ids[:10]  # Return max 10 videos
+            
+        except json.JSONDecodeError:
+            st.warning("ChatGPT didn't return valid JSON. Using fallback method...")
+            # Fallback to URL extraction only
+            video_ids = extract_youtube_links(content)
+            return video_ids[:10]
         
     except Exception as e:
         st.error(f"Error with ChatGPT API: {e}")
@@ -173,20 +200,20 @@ def main():
         st.markdown("---")
         st.markdown("### 🎮 How to Play")
         st.markdown("""
-        1. Enter a prompt describing the type of videos you want
-        2. Click 'Generate Videos' to get 10 YouTube links
-        3. Click on any video to play it directly in the app
-        4. Enjoy your personalized video collection!
+        1. Enter a prompt describing the type of songs you want
+        2. Click 'Generate Videos' to get 10 song links
+        3. Click on any song button to play it
+        4. Listen and try to guess what song it is and where it's from!
         """)
         
         st.markdown("---")
         st.markdown("### 💡 Example Prompts")
         st.markdown("""
         - "songs from movies"
-        - "funny cat videos"
-        - "cooking tutorials"
-        - "gaming highlights"
-        - "educational content"
+        - "80s pop hits"
+        - "classic rock songs"
+        - "disney movie songs"
+        - "video game music"
         """)
     
     # Main content area
@@ -234,40 +261,53 @@ def main():
         else:
             st.metric("Videos Found", 0)
     
-    # Display videos
+    # Display videos for guessing game
     if 'videos' in st.session_state and st.session_state.videos:
-        st.markdown('<h2 class="sub-header">🎬 Your Video Collection</h2>', unsafe_allow_html=True)
+        st.markdown('<h2 class="sub-header">🎵 Song Guessing Game</h2>', unsafe_allow_html=True)
+        st.markdown("**Listen to each song and try to guess what it is and where it's from!**")
         
-        # Create columns for video display
-        cols = st.columns(2)
+        # Hide all button
+        if st.button("🙈 Hide All Reveals", key="hide_all"):
+            if 'revealed_song' in st.session_state:
+                del st.session_state.revealed_song
+        
+        # Create a grid of play buttons
+        cols = st.columns(3)  # 3 columns for better layout
         
         for i, video in enumerate(st.session_state.videos):
-            col_idx = i % 2
+            col_idx = i % 3
             with cols[col_idx]:
                 with st.container():
                     st.markdown('<div class="video-card">', unsafe_allow_html=True)
                     
-                    # Video thumbnail
-                    if video['thumbnail']:
-                        st.image(video['thumbnail'], use_column_width=True)
+                    # Play and reveal buttons in a row
+                    col1, col2 = st.columns([2, 1])
                     
-                    # Video title
-                    st.markdown(f"**{video['title']}**")
+                    with col1:
+                        if st.button(f"🎵 Song #{i+1}", key=f"play_{i}", use_container_width=True):
+                            st.session_state.selected_video = video['video_id']
+                            st.session_state.current_song_number = i + 1
                     
-                    # Video details
-                    st.markdown(f"📺 **Channel:** {video['channel']}")
-                    st.markdown(f"⏱️ **Duration:** {video['duration']}")
-                    st.markdown(f"👁️ **Views:** {video['viewCount']}")
+                    with col2:
+                        if st.button("🔍 Reveal", key=f"reveal_{i}", use_container_width=True):
+                            st.session_state.revealed_song = i
                     
-                    # Play button
-                    if st.button(f"▶️ Play Video", key=f"play_{i}", use_container_width=True):
-                        st.session_state.selected_video = video['video_id']
+                    # Show revealed song details
+                    if st.session_state.get('revealed_song') == i and 'song_details' in st.session_state:
+                        if i < len(st.session_state.song_details):
+                            song_info = st.session_state.song_details[i]
+                            st.markdown(f"""
+                            **🎵 {song_info['title']}**  
+                            **🎬 From:** {song_info['source']}  
+                            **👤 Artist:** {song_info['artist']}
+                            """)
                     
                     st.markdown('</div>', unsafe_allow_html=True)
     
     # Video player
     if 'selected_video' in st.session_state:
-        st.markdown('<h2 class="sub-header">🎥 Now Playing</h2>', unsafe_allow_html=True)
+        song_number = st.session_state.get('current_song_number', '?')
+        st.markdown(f'<h2 class="sub-header">🎵 Now Playing: Song #{song_number}</h2>', unsafe_allow_html=True)
         
         # Create YouTube embed URL
         video_id = st.session_state.selected_video
