@@ -336,11 +336,10 @@ def main():
             # Song counter
             st.markdown(f'<div style="text-align: center;"><strong>Song {current_index + 1} of {total_songs}</strong></div>', unsafe_allow_html=True)
             
-            # Check video availability
-            if not current_video.get('available', True):
-                st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-                st.warning("⚠️ This video may not be available. Trying to play anyway...")
-                st.markdown('</div>', unsafe_allow_html=True)
+            # Check video availability - always show warning for better user experience
+            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+            st.info("💡 If the video doesn't play, try the alternative YouTube link below")
+            st.markdown('</div>', unsafe_allow_html=True)
             
             # Test button to show warning (remove this later) - centered
             st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
@@ -404,14 +403,10 @@ def main():
         song_number = st.session_state.get('current_song_number', '?')
         st.markdown(f'<h2 class="sub-header" style="text-align: center;">🎵 Now Playing: Song #{song_number}</h2>', unsafe_allow_html=True)
         
-        # Check if current video is available
-        current_index = st.session_state.get('current_song_index', 0)
-        if 'videos' in st.session_state and current_index < len(st.session_state.videos):
-            current_video = st.session_state.videos[current_index]
-            if not current_video.get('available', True):
-                st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-                st.warning("⚠️ This video may not be available. If it doesn't play, try the alternative link below.")
-                st.markdown('</div>', unsafe_allow_html=True)
+        # Always show helpful message about video playback
+        st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+        st.info("💡 If the video doesn't play or shows an error, use the 'Open in YouTube' link below")
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Create YouTube embed URL with autoplay
         video_id = st.session_state.selected_video
@@ -433,9 +428,13 @@ def main():
         </div>
         """, unsafe_allow_html=True)
         
-        # Alternative: Direct link
+        # Alternative: Direct link - more prominent
         st.markdown("---")
-        st.markdown('<div style="text-align: center;"><strong>Alternative:</strong> <a href="https://www.youtube.com/watch?v=' + video_id + '" target="_blank">Open in YouTube</a></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center; padding: 20px; background-color: #f0f2f6; border-radius: 10px; margin: 20px 0;">', unsafe_allow_html=True)
+        st.markdown('<h3 style="color: #ff6b6b;">🎬 Video Not Playing?</h3>', unsafe_allow_html=True)
+        st.markdown('<p><strong>Try opening the video directly on YouTube:</strong></p>', unsafe_allow_html=True)
+        st.markdown('<a href="https://www.youtube.com/watch?v=' + video_id + '" target="_blank" style="background-color: #ff0000; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">▶️ Open in YouTube</a>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Close button
         if st.button("❌ Close Player"):
