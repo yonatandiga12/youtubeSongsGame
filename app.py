@@ -1,21 +1,12 @@
 import streamlit as st
-import openai
-import os
-from dotenv import load_dotenv
+from openai import OpenAI
 from youtubesearchpython import VideosSearch
 import json
 import re
 
-# Load environment variables
-load_dotenv()
-
-# Configure OpenAI - try Streamlit secrets first, then environment variables
-if 'OPENAI_API_KEY' in st.secrets:
-    OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-elif os.getenv("OPENAI_API_KEY"):
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-else:
-    OPENAI_API_KEY = None
+# Configure OpenAI - only from Streamlit secrets
+def get_openai_api_key():
+    return st.secrets.get("OPENAI_API_KEY")
 
 # Page configuration
 st.set_page_config(
@@ -110,7 +101,13 @@ def get_youtube_videos_with_chatgpt(prompt):
         
         from openai import OpenAI
         
-        client = OpenAI(api_key=OPENAI_API_KEY)
+        # Get API key from Streamlit secrets
+        api_key = get_openai_api_key()
+        if not api_key:
+            st.error("❌ OpenAI API key not found in Streamlit Cloud secrets!")
+            return []
+            
+        client = OpenAI(api_key=api_key)
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -166,18 +163,12 @@ def main():
     with st.sidebar:
         st.markdown("### ⚙️ Configuration")
         
-        # API Key input (only show if not in secrets)
-        if 'OPENAI_API_KEY' not in st.secrets and not os.getenv("OPENAI_API_KEY"):
-            api_key = st.text_input(
-                "OpenAI API Key",
-                type="password",
-                help="Enter your OpenAI API key to use ChatGPT for video suggestions"
-            )
-            
-            if api_key:
-                OPENAI_API_KEY = api_key
-        else:
+        # API Key status
+        if 'OPENAI_API_KEY' in st.secrets:
             st.success("✅ API key loaded from secrets")
+        else:
+            st.error("❌ API key not found in Streamlit Cloud secrets")
+            st.info("Please add your OpenAI API key in the Streamlit Cloud dashboard under Settings → Secrets")
         
         st.markdown("---")
         st.markdown("### 🎮 How to Play")
@@ -218,8 +209,9 @@ def main():
         if st.button("🎲 Generate Videos", type="primary", use_container_width=True):
             if not prompt:
                 st.warning("Please enter a prompt first!")
-            elif not OPENAI_API_KEY:
-                st.warning("Please enter your OpenAI API key in the sidebar!")
+            elif not get_openai_api_key():
+                st.error("❌ OpenAI API key not found!")
+                st.info("Please add your API key in Streamlit Cloud Settings → Secrets")
             else:
                 with st.spinner("🎵 Generating your video collection..."):
                     video_ids = get_youtube_videos_with_chatgpt(prompt)

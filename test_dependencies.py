@@ -26,12 +26,7 @@ def test_imports():
         print(f"❌ youtube-search-python import failed: {e}")
         return False
     
-    try:
-        from dotenv import load_dotenv
-        print("✅ python-dotenv imported successfully")
-    except ImportError as e:
-        print(f"❌ python-dotenv import failed: {e}")
-        return False
+
     
     try:
         import requests
