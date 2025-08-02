@@ -269,6 +269,10 @@ def main():
                             # Initialize persistent song list
                             st.session_state.all_song_details = []
                             
+                            # Reset revealed song state
+                            if 'revealed_song' in st.session_state:
+                                del st.session_state.revealed_song
+                            
                             for video_id in video_ids:
                                 video_info = get_video_info(video_id)
                                 st.session_state.videos.append(video_info)
@@ -305,6 +309,10 @@ def main():
                                 if 'all_song_details' not in st.session_state:
                                     st.session_state.all_song_details = []
                                 st.session_state.all_song_details.extend(st.session_state.song_details)
+                            
+                            # Reset revealed song state
+                            if 'revealed_song' in st.session_state:
+                                del st.session_state.revealed_song
                             
                             for video_id in video_ids:
                                 video_info = get_video_info(video_id)
@@ -380,8 +388,8 @@ def main():
                 st.session_state.auto_play = True
                 st.rerun()
     
-    # Add spacing to move video player lower
-    st.markdown("<br><br><br><br>", unsafe_allow_html=True)
+    # Add extensive spacing to move video player much lower
+    st.markdown("<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
     
     # Video player
     if 'selected_video' in st.session_state:
