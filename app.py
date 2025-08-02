@@ -64,7 +64,7 @@ def extract_youtube_links(text):
     return list(set(video_ids))  # Remove duplicates
 
 def get_video_info(video_id):
-    """Get basic video information"""
+    """Get basic video information and check availability"""
     try:
         # Use a simpler approach to avoid the proxies issue
         import requests
@@ -77,18 +77,24 @@ def get_video_info(video_id):
             data = response.json()
             return {
                 'title': data.get('title', 'Unknown Title'),
-                'video_id': video_id
+                'video_id': video_id,
+                'available': True
+            }
+        else:
+            return {
+                'title': f'Video {video_id[:8]}...',
+                'video_id': video_id,
+                'available': False
             }
     except Exception as e:
-        # If oEmbed fails, just return basic info
-        pass
-    
-    return {
-        'title': f'Video {video_id[:8]}...',
-        'video_id': video_id
-    }
+        # If oEmbed fails, video might not be available
+        return {
+            'title': f'Video {video_id[:8]}...',
+            'video_id': video_id,
+            'available': False
+        }
 
-def get_youtube_videos_with_chatgpt(prompt):
+def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
     """Use ChatGPT to get song suggestions, then search YouTube for those songs"""
     try:
         # First, use ChatGPT to suggest songs based on the prompt
@@ -111,7 +117,12 @@ def get_youtube_videos_with_chatgpt(prompt):
         
         Return exactly 10 songs. Make sure the JSON is valid."""
         
-        user_prompt = f"Suggest 10 songs related to: {prompt}"
+        # Add exclusion instruction if we have previous songs
+        if exclude_songs:
+            exclude_list = [f"{song['title']} by {song['artist']}" for song in exclude_songs]
+            user_prompt = f"Suggest 10 songs related to: {prompt}. Please avoid these songs: {', '.join(exclude_list)}"
+        else:
+            user_prompt = f"Suggest 10 songs related to: {prompt}"
         
         from openai import OpenAI
         
@@ -242,6 +253,7 @@ def main():
                             
                             # Store videos in session state
                             st.session_state.videos = []
+                            st.session_state.current_song_index = 0
                             for video_id in video_ids:
                                 video_info = get_video_info(video_id)
                                 st.session_state.videos.append(video_info)
@@ -257,13 +269,16 @@ def main():
                     st.info("Please add your API key in Streamlit Cloud Settings → Secrets")
                 else:
                     with st.spinner("🎵 Generating new songs..."):
-                        video_ids = get_youtube_videos_with_chatgpt(prompt)
+                        # Get existing songs to exclude them
+                        exclude_songs = st.session_state.get('song_details', [])
+                        video_ids = get_youtube_videos_with_chatgpt(prompt, exclude_songs)
                         
                         if video_ids:
                             st.success(f"🎉 Found {len(video_ids)} new songs!")
                             
                             # Store videos in session state
                             st.session_state.videos = []
+                            st.session_state.current_song_index = 0
                             for video_id in video_ids:
                                 video_info = get_video_info(video_id)
                                 st.session_state.videos.append(video_info)
@@ -277,54 +292,64 @@ def main():
         else:
             st.metric("Videos Found", 0)
     
-    # Display videos for guessing game
+    # Display single song for guessing game
     if 'videos' in st.session_state and st.session_state.videos:
         st.markdown('<h2 class="sub-header">🎵 Song Guessing Game</h2>', unsafe_allow_html=True)
         st.markdown("**Listen to each song and try to guess what it is and where it's from!**")
         
-        # Hide all button
-        if st.button("🙈 Hide All Reveals", key="hide_all"):
-            if 'revealed_song' in st.session_state:
-                del st.session_state.revealed_song
+        # Get current song index
+        current_index = st.session_state.get('current_song_index', 0)
+        total_songs = len(st.session_state.videos)
         
-        # Create a grid of play buttons
-        cols = st.columns(3)  # 3 columns for better layout
-        
-        for i, video in enumerate(st.session_state.videos):
-            col_idx = i % 3
-            with cols[col_idx]:
-                with st.container():
-                    st.markdown('<div class="video-card">', unsafe_allow_html=True)
-                    
-                    # Play and reveal buttons in a row
-                    col1, col2 = st.columns([2, 1])
-                    
-                    with col1:
-                        # Check if this song is currently playing
-                        is_playing = (st.session_state.get('selected_video') == video['video_id'])
-                        button_text = f"⏸️ Song #{i+1}" if is_playing else f"🎵 Song #{i+1}"
-                        
-                        if st.button(button_text, key=f"play_{i}", use_container_width=True):
-                            st.session_state.selected_video = video['video_id']
-                            st.session_state.current_song_number = i + 1
-                            # Auto-start the video by setting autoplay parameter
-                            st.session_state.auto_play = True
-                    
-                    with col2:
-                        if st.button("🔍 Reveal", key=f"reveal_{i}", use_container_width=True):
-                            st.session_state.revealed_song = i
-                    
-                    # Show revealed song details
-                    if st.session_state.get('revealed_song') == i and 'song_details' in st.session_state:
-                        if i < len(st.session_state.song_details):
-                            song_info = st.session_state.song_details[i]
-                            st.markdown(f"""
-                            **🎵 {song_info['title']}**  
-                            **🎬 From:** {song_info['source']}  
-                            **👤 Artist:** {song_info['artist']}
-                            """)
-                    
-                    st.markdown('</div>', unsafe_allow_html=True)
+        if current_index < total_songs:
+            current_video = st.session_state.videos[current_index]
+            
+            # Song counter
+            st.markdown(f"**Song {current_index + 1} of {total_songs}**")
+            
+            # Check video availability
+            if not current_video.get('available', True):
+                st.warning("⚠️ This video may not be available. Trying to play anyway...")
+            
+            # Play and reveal buttons
+            col1, col2, col3 = st.columns([1, 1, 1])
+            
+            with col1:
+                if st.button("🔍 Reveal Song", key="reveal_current", use_container_width=True):
+                    st.session_state.revealed_song = current_index
+            
+            with col2:
+                if st.button("⏭️ Next Song", key="next_song", use_container_width=True):
+                    if current_index < total_songs - 1:
+                        st.session_state.current_song_index = current_index + 1
+                        st.session_state.selected_video = st.session_state.videos[current_index + 1]['video_id']
+                        st.session_state.current_song_number = current_index + 2
+                        st.session_state.auto_play = True
+                        st.rerun()
+            
+            with col3:
+                if st.button("⏮️ Previous Song", key="prev_song", use_container_width=True):
+                    if current_index > 0:
+                        st.session_state.current_song_index = current_index - 1
+                        st.session_state.selected_video = st.session_state.videos[current_index - 1]['video_id']
+                        st.session_state.current_song_number = current_index
+                        st.session_state.auto_play = True
+                        st.rerun()
+            
+            # Show revealed song details
+            if st.session_state.get('revealed_song') == current_index and 'song_details' in st.session_state:
+                if current_index < len(st.session_state.song_details):
+                    song_info = st.session_state.song_details[current_index]
+                    st.markdown(f"""
+                    **🎵 {song_info['title']}**  
+                    **🎬 From:** {song_info['source']}  
+                    **👤 Artist:** {song_info['artist']}
+                    """)
+            
+            # Auto-play current song
+            st.session_state.selected_video = current_video['video_id']
+            st.session_state.current_song_number = current_index + 1
+            st.session_state.auto_play = True
     
     # Video player
     if 'selected_video' in st.session_state:
