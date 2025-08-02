@@ -98,11 +98,11 @@ def get_video_info(video_id):
                     'available': False
                 }
     except Exception as e:
-        # If all methods fail, assume video is available (let YouTube handle it)
+        # If all methods fail, assume video is NOT available
         return {
             'title': f'Video {video_id[:8]}...',
             'video_id': video_id,
-            'available': True  # Changed to True to be less restrictive
+            'available': False  # Changed back to False to be more strict
         }
 
 def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
@@ -342,7 +342,14 @@ def main():
                 st.warning("⚠️ This video may not be available. Trying to play anyway...")
                 st.markdown('</div>', unsafe_allow_html=True)
             
-            # Play and reveal buttons
+            # Test button to show warning (remove this later) - centered
+            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+            if st.button("🧪 Test Warning", key="test_warning"):
+                st.warning("⚠️ This is a test warning to show the styling works!")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Play and reveal buttons - centered
+            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
             col1, col2, col3 = st.columns([1, 1, 1])
             
             with col1:
@@ -366,6 +373,7 @@ def main():
                         st.session_state.current_song_number = current_index
                         st.session_state.auto_play = True
                         st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
             
             # Show revealed song details
             if st.session_state.get('revealed_song') == current_index and 'song_details' in st.session_state:
@@ -379,12 +387,14 @@ def main():
                     </div>
                     """, unsafe_allow_html=True)
             
-            # Play button for manual control
+            # Play button for manual control - centered
+            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
             if st.button("▶️ Play Song", key="play_current", use_container_width=True):
                 st.session_state.selected_video = current_video['video_id']
                 st.session_state.current_song_number = current_index + 1
                 st.session_state.auto_play = True
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
     
     # Add extensive spacing to move video player much lower
     st.markdown("<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
