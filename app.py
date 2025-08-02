@@ -336,16 +336,10 @@ def main():
             # Song counter
             st.markdown(f'<div style="text-align: center;"><strong>Song {current_index + 1} of {total_songs}</strong></div>', unsafe_allow_html=True)
             
-            # Check video availability - always show warning for better user experience
-            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-            st.info("💡 If the video doesn't play, try the alternative YouTube link below")
-            st.markdown('</div>', unsafe_allow_html=True)
+            # Video availability check will be done via JavaScript
+            pass
             
-            # Test button to show warning (remove this later) - centered
-            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-            if st.button("🧪 Test Warning", key="test_warning"):
-                st.warning("⚠️ This is a test warning to show the styling works!")
-            st.markdown('</div>', unsafe_allow_html=True)
+
             
             # Play and reveal buttons - centered
             st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
@@ -403,10 +397,8 @@ def main():
         song_number = st.session_state.get('current_song_number', '?')
         st.markdown(f'<h2 class="sub-header" style="text-align: center;">🎵 Now Playing: Song #{song_number}</h2>', unsafe_allow_html=True)
         
-        # Always show helpful message about video playback
-        st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-        st.info("💡 If the video doesn't play or shows an error, use the 'Open in YouTube' link below")
-        st.markdown('</div>', unsafe_allow_html=True)
+        # Dynamic warning will be shown via JavaScript if video fails
+        pass
         
         # Create YouTube embed URL with autoplay
         video_id = st.session_state.selected_video
@@ -416,16 +408,70 @@ def main():
         # Reset autoplay flag
         st.session_state.auto_play = False
         
-        # Display video using iframe with better compatibility
+        # Display video using iframe with JavaScript availability check
         st.markdown(f"""
         <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <iframe 
+                id="youtube-player"
                 src="{embed_url}" 
                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; border-radius: 10px;" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                 allowfullscreen>
             </iframe>
         </div>
+        
+        <div id="video-warning" style="display: none; text-align: center; padding: 15px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; margin: 15px 0;">
+            <h4 style="color: #721c24; margin: 0 0 10px 0;">⚠️ Video Not Available</h4>
+            <p style="color: #721c24; margin: 0;"><strong>This video appears to be unavailable.</strong><br>Try the "Open in YouTube" link below.</p>
+        </div>
+        
+        <script>
+        // Check video availability after 2 seconds
+        setTimeout(function() {{
+            var iframe = document.getElementById('youtube-player');
+            var warning = document.getElementById('video-warning');
+            
+            // Try to detect if video is playing or has errors
+            try {{
+                // Check if iframe is loaded and has content
+                if (iframe && iframe.contentWindow) {{
+                    // Listen for messages from YouTube iframe
+                    window.addEventListener('message', function(event) {{
+                        if (event.origin === 'https://www.youtube.com') {{
+                            if (event.data && event.data.event === 'onStateChange') {{
+                                if (event.data.info === -1) {{
+                                    // Video is unavailable or has error
+                                    warning.style.display = 'block';
+                                }}
+                            }}
+                        }}
+                    }});
+                    
+                    // Alternative check: look for error indicators in iframe
+                    setTimeout(function() {{
+                        try {{
+                            var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                            if (iframeDoc) {{
+                                var errorElements = iframeDoc.querySelectorAll('[class*="error"], [class*="unavailable"], [class*="not-available"]');
+                                if (errorElements.length > 0) {{
+                                    warning.style.display = 'block';
+                                }}
+                            }}
+                        }} catch (e) {{
+                            // Cross-origin restrictions, try alternative method
+                            var iframeSrc = iframe.src;
+                            if (iframeSrc.includes('error') || iframeSrc.includes('unavailable')) {{
+                                warning.style.display = 'block';
+                            }}
+                        }}
+                    }}, 3000);
+                }}
+            }} catch (e) {{
+                // If we can't access iframe content, show warning as precaution
+                warning.style.display = 'block';
+            }}
+        }}, 2000);
+        </script>
         """, unsafe_allow_html=True)
         
         # Alternative: Direct link - more prominent
