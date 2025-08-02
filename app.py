@@ -188,14 +188,7 @@ def main():
     with st.sidebar:
         st.markdown("### ⚙️ Configuration")
         
-        # API Key status
-        if 'OPENAI_API_KEY' in st.secrets:
-            st.success("✅ API key loaded from secrets")
-        else:
-            st.error("❌ API key not found in Streamlit Cloud secrets")
-            st.info("Please add your OpenAI API key in the Streamlit Cloud dashboard under Settings → Secrets")
-        
-        st.markdown("---")
+
         st.markdown("### 🎮 How to Play")
         st.markdown("""
         1. Enter a prompt describing the type of songs you want
@@ -231,26 +224,51 @@ def main():
             st.markdown('</div>', unsafe_allow_html=True)
         
         # Generate button
-        if st.button("🎲 Generate Videos", type="primary", use_container_width=True):
-            if not prompt:
-                st.warning("Please enter a prompt first!")
-            elif not get_openai_api_key():
-                st.error("❌ OpenAI API key not found!")
-                st.info("Please add your API key in Streamlit Cloud Settings → Secrets")
-            else:
-                with st.spinner("🎵 Generating your video collection..."):
-                    video_ids = get_youtube_videos_with_chatgpt(prompt)
-                    
-                    if video_ids:
-                        st.success(f"🎉 Found {len(video_ids)} videos!")
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            if st.button("🎲 Generate Videos", type="primary", use_container_width=True):
+                if not prompt:
+                    st.warning("Please enter a prompt first!")
+                elif not get_openai_api_key():
+                    st.error("❌ OpenAI API key not found!")
+                    st.info("Please add your API key in Streamlit Cloud Settings → Secrets")
+                else:
+                    with st.spinner("🎵 Generating your video collection..."):
+                        video_ids = get_youtube_videos_with_chatgpt(prompt)
                         
-                        # Store videos in session state
-                        st.session_state.videos = []
-                        for video_id in video_ids:
-                            video_info = get_video_info(video_id)
-                            st.session_state.videos.append(video_info)
-                    else:
-                        st.error("❌ No videos found. Please try a different prompt.")
+                        if video_ids:
+                            st.success(f"🎉 Found {len(video_ids)} videos!")
+                            
+                            # Store videos in session state
+                            st.session_state.videos = []
+                            for video_id in video_ids:
+                                video_info = get_video_info(video_id)
+                                st.session_state.videos.append(video_info)
+                        else:
+                            st.error("❌ No videos found. Please try a different prompt.")
+        
+        with col2:
+            if st.button("🔄 New Songs", use_container_width=True):
+                if not prompt:
+                    st.warning("Please enter a prompt first!")
+                elif not get_openai_api_key():
+                    st.error("❌ OpenAI API key not found!")
+                    st.info("Please add your API key in Streamlit Cloud Settings → Secrets")
+                else:
+                    with st.spinner("🎵 Generating new songs..."):
+                        video_ids = get_youtube_videos_with_chatgpt(prompt)
+                        
+                        if video_ids:
+                            st.success(f"🎉 Found {len(video_ids)} new songs!")
+                            
+                            # Store videos in session state
+                            st.session_state.videos = []
+                            for video_id in video_ids:
+                                video_info = get_video_info(video_id)
+                                st.session_state.videos.append(video_info)
+                        else:
+                            st.error("❌ No songs found. Please try a different prompt.")
     
     with col2:
         st.markdown('<h2 class="sub-header">📊 Stats</h2>', unsafe_allow_html=True)
@@ -282,9 +300,15 @@ def main():
                     col1, col2 = st.columns([2, 1])
                     
                     with col1:
-                        if st.button(f"🎵 Song #{i+1}", key=f"play_{i}", use_container_width=True):
+                        # Check if this song is currently playing
+                        is_playing = (st.session_state.get('selected_video') == video['video_id'])
+                        button_text = f"⏸️ Song #{i+1}" if is_playing else f"🎵 Song #{i+1}"
+                        
+                        if st.button(button_text, key=f"play_{i}", use_container_width=True):
                             st.session_state.selected_video = video['video_id']
                             st.session_state.current_song_number = i + 1
+                            # Auto-start the video by setting autoplay parameter
+                            st.session_state.auto_play = True
                     
                     with col2:
                         if st.button("🔍 Reveal", key=f"reveal_{i}", use_container_width=True):
@@ -307,15 +331,19 @@ def main():
         song_number = st.session_state.get('current_song_number', '?')
         st.markdown(f'<h2 class="sub-header">🎵 Now Playing: Song #{song_number}</h2>', unsafe_allow_html=True)
         
-        # Create YouTube embed URL
+        # Create YouTube embed URL with autoplay
         video_id = st.session_state.selected_video
-        embed_url = f"https://www.youtube.com/embed/{video_id}"
+        autoplay_param = "&autoplay=1" if st.session_state.get('auto_play', False) else ""
+        embed_url = f"https://www.youtube.com/embed/{video_id}?rel=0&modestbranding=1{autoplay_param}"
+        
+        # Reset autoplay flag
+        st.session_state.auto_play = False
         
         # Display video using iframe with better compatibility
         st.markdown(f"""
         <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <iframe 
-                src="{embed_url}?rel=0&modestbranding=1" 
+                src="{embed_url}" 
                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; border-radius: 10px;" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                 allowfullscreen>
