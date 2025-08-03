@@ -1,0 +1,278 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="224">
+            <item index="0" class="java.lang.String" itemvalue="altgraph" />
+            <item index="1" class="java.lang.String" itemvalue="google-pasta" />
+            <item index="2" class="java.lang.String" itemvalue="numba" />
+            <item index="3" class="java.lang.String" itemvalue="tensorflow-estimator" />
+            <item index="4" class="java.lang.String" itemvalue="greenlet" />
+            <item index="5" class="java.lang.String" itemvalue="Babel" />
+            <item index="6" class="java.lang.String" itemvalue="scikit-learn" />
+            <item index="7" class="java.lang.String" itemvalue="trio" />
+            <item index="8" class="java.lang.String" itemvalue="pytwed" />
+            <item index="9" class="java.lang.String" itemvalue="pycryptodomex" />
+            <item index="10" class="java.lang.String" itemvalue="lxml" />
+            <item index="11" class="java.lang.String" itemvalue="soupsieve" />
+            <item index="12" class="java.lang.String" itemvalue="auto-py-to-exe" />
+            <item index="13" class="java.lang.String" itemvalue="jsonschema" />
+            <item index="14" class="java.lang.String" itemvalue="google-cloud-speech" />
+            <item index="15" class="java.lang.String" itemvalue="poetry-core" />
+            <item index="16" class="java.lang.String" itemvalue="SpeechRecognition" />
+            <item index="17" class="java.lang.String" itemvalue="py2exe-gui" />
+            <item index="18" class="java.lang.String" itemvalue="pcapng" />
+            <item index="19" class="java.lang.String" itemvalue="Werkzeug" />
+            <item index="20" class="java.lang.String" itemvalue="proglog" />
+            <item index="21" class="java.lang.String" itemvalue="tensorboard-data-server" />
+            <item index="22" class="java.lang.String" itemvalue="click" />
+            <item index="23" class="java.lang.String" itemvalue="pefile" />
+            <item index="24" class="java.lang.String" itemvalue="pyinstaller-hooks-contrib" />
+            <item index="25" class="java.lang.String" itemvalue="regex" />
+            <item index="26" class="java.lang.String" itemvalue="installer" />
+            <item index="27" class="java.lang.String" itemvalue="tensorboard" />
+            <item index="28" class="java.lang.String" itemvalue="imageio" />
+            <item index="29" class="java.lang.String" itemvalue="matplotlib" />
+            <item index="30" class="java.lang.String" itemvalue="dash-core-components" />
+            <item index="31" class="java.lang.String" itemvalue="PySide6" />
+            <item index="32" class="java.lang.String" itemvalue="idna" />
+            <item index="33" class="java.lang.String" itemvalue="rsa" />
+            <item index="34" class="java.lang.String" itemvalue="networkx" />
+            <item index="35" class="java.lang.String" itemvalue="pluggy" />
+            <item index="36" class="java.lang.String" itemvalue="cffi" />
+            <item index="37" class="java.lang.String" itemvalue="pkgutil_resolve_name" />
+            <item index="38" class="java.lang.String" itemvalue="bottle" />
+            <item index="39" class="java.lang.String" itemvalue="numpy" />
+            <item index="40" class="java.lang.String" itemvalue="exceptiongroup" />
+            <item index="41" class="java.lang.String" itemvalue="selenium" />
+            <item index="42" class="java.lang.String" itemvalue="grpcio-status" />
+            <item index="43" class="java.lang.String" itemvalue="wikipedia" />
+            <item index="44" class="java.lang.String" itemvalue="websockets" />
+            <item index="45" class="java.lang.String" itemvalue="jaraco.classes" />
+            <item index="46" class="java.lang.String" itemvalue="soxr" />
+            <item index="47" class="java.lang.String" itemvalue="trove-classifiers" />
+            <item index="48" class="java.lang.String" itemvalue="openai-whisper" />
+            <item index="49" class="java.lang.String" itemvalue="importlib-resources" />
+            <item index="50" class="java.lang.String" itemvalue="dash-table" />
+            <item index="51" class="java.lang.String" itemvalue="pytz" />
+            <item index="52" class="java.lang.String" itemvalue="keyring" />
+            <item index="53" class="java.lang.String" itemvalue="requests-toolbelt" />
+            <item index="54" class="java.lang.String" itemvalue="absl-py" />
+            <item index="55" class="java.lang.String" itemvalue="protobuf" />
+            <item index="56" class="java.lang.String" itemvalue="joblib" />
+            <item index="57" class="java.lang.String" itemvalue="opt-einsum" />
+            <item index="58" class="java.lang.String" itemvalue="gast" />
+            <item index="59" class="java.lang.String" itemvalue="startrek" />
+            <item index="60" class="java.lang.String" itemvalue="dulwich" />
+            <item index="61" class="java.lang.String" itemvalue="fsspec" />
+            <item index="62" class="java.lang.String" itemvalue="docopt" />
+            <item index="63" class="java.lang.String" itemvalue="filelock" />
+            <item index="64" class="java.lang.String" itemvalue="oauthlib" />
+            <item index="65" class="java.lang.String" itemvalue="keras" />
+            <item index="66" class="java.lang.String" itemvalue="pyparsing" />
+            <item index="67" class="java.lang.String" itemvalue="hmmlearn" />
+            <item index="68" class="java.lang.String" itemvalue="crashtest" />
+            <item index="69" class="java.lang.String" itemvalue="google-api-core" />
+            <item index="70" class="java.lang.String" itemvalue="beautifulsoup4" />
+            <item index="71" class="java.lang.String" itemvalue="tokenizers" />
+            <item index="72" class="java.lang.String" itemvalue="gower" />
+            <item index="73" class="java.lang.String" itemvalue="iniconfig" />
+            <item index="74" class="java.lang.String" itemvalue="youtube-dl" />
+            <item index="75" class="java.lang.String" itemvalue="tensorflow-intel" />
+            <item index="76" class="java.lang.String" itemvalue="dtaidistance" />
+            <item index="77" class="java.lang.String" itemvalue="resampy" />
+            <item index="78" class="java.lang.String" itemvalue="librosa" />
+            <item index="79" class="java.lang.String" itemvalue="distlib" />
+            <item index="80" class="java.lang.String" itemvalue="pypiwin32" />
+            <item index="81" class="java.lang.String" itemvalue="bottle-websocket" />
+            <item index="82" class="java.lang.String" itemvalue="FileScanner" />
+            <item index="83" class="java.lang.String" itemvalue="shellingham" />
+            <item index="84" class="java.lang.String" itemvalue="pyshark" />
+            <item index="85" class="java.lang.String" itemvalue="llvmlite" />
+            <item index="86" class="java.lang.String" itemvalue="Jinja2" />
+            <item index="87" class="java.lang.String" itemvalue="tomlkit" />
+            <item index="88" class="java.lang.String" itemvalue="pywin32-ctypes" />
+            <item index="89" class="java.lang.String" itemvalue="pyproject_hooks" />
+            <item index="90" class="java.lang.String" itemvalue="PySide6-Essentials" />
+            <item index="91" class="java.lang.String" itemvalue="ffmpeg-python" />
+            <item index="92" class="java.lang.String" itemvalue="packaging" />
+            <item index="93" class="java.lang.String" itemvalue="pooch" />
+            <item index="94" class="java.lang.String" itemvalue="lief" />
+            <item index="95" class="java.lang.String" itemvalue="lockfile" />
+            <item index="96" class="java.lang.String" itemvalue="soundfile" />
+            <item index="97" class="java.lang.String" itemvalue="cleo" />
+            <item index="98" class="java.lang.String" itemvalue="tabulate" />
+            <item index="99" class="java.lang.String" itemvalue="yarg" />
+            <item index="100" class="java.lang.String" itemvalue="PyYAML" />
+            <item index="101" class="java.lang.String" itemvalue="pycparser" />
+            <item index="102" class="java.lang.String" itemvalue="PySide6-Addons" />
+            <item index="103" class="java.lang.String" itemvalue="redis" />
+            <item index="104" class="java.lang.String" itemvalue="pyasn1-modules" />
+            <item index="105" class="java.lang.String" itemvalue="dtwParallel" />
+            <item index="106" class="java.lang.String" itemvalue="astunparse" />
+            <item index="107" class="java.lang.String" itemvalue="moviepy" />
+            <item index="108" class="java.lang.String" itemvalue="gevent" />
+            <item index="109" class="java.lang.String" itemvalue="pywin32" />
+            <item index="110" class="java.lang.String" itemvalue="libclang" />
+            <item index="111" class="java.lang.String" itemvalue="transformers" />
+            <item index="112" class="java.lang.String" itemvalue="mutagen" />
+            <item index="113" class="java.lang.String" itemvalue="rapidfuzz" />
+            <item index="114" class="java.lang.String" itemvalue="audioread" />
+            <item index="115" class="java.lang.String" itemvalue="pydub" />
+            <item index="116" class="java.lang.String" itemvalue="pexpect" />
+            <item index="117" class="java.lang.String" itemvalue="spotipy" />
+            <item index="118" class="java.lang.String" itemvalue="attrs" />
+            <item index="119" class="java.lang.String" itemvalue="psutil" />
+            <item index="120" class="java.lang.String" itemvalue="flatbuffers" />
+            <item index="121" class="java.lang.String" itemvalue="platformdirs" />
+            <item index="122" class="java.lang.String" itemvalue="msgpack" />
+            <item index="123" class="java.lang.String" itemvalue="ansi2html" />
+            <item index="124" class="java.lang.String" itemvalue="decorator" />
+            <item index="125" class="java.lang.String" itemvalue="cx-Logging" />
+            <item index="126" class="java.lang.String" itemvalue="pyasn1" />
+            <item index="127" class="java.lang.String" itemvalue="requests" />
+            <item index="128" class="java.lang.String" itemvalue="sniffio" />
+            <item index="129" class="java.lang.String" itemvalue="pyrsistent" />
+            <item index="130" class="java.lang.String" itemvalue="gevent-websocket" />
+            <item index="131" class="java.lang.String" itemvalue="tensorflow" />
+            <item index="132" class="java.lang.String" itemvalue="seaborn" />
+            <item index="133" class="java.lang.String" itemvalue="tensorboard-plugin-wit" />
+            <item index="134" class="java.lang.String" itemvalue="whichcraft" />
+            <item index="135" class="java.lang.String" itemvalue="zipp" />
+            <item index="136" class="java.lang.String" itemvalue="nest-asyncio" />
+            <item index="137" class="java.lang.String" itemvalue="pkginfo" />
+            <item index="138" class="java.lang.String" itemvalue="tenacity" />
+            <item index="139" class="java.lang.String" itemvalue="scapy" />
+            <item index="140" class="java.lang.String" itemvalue="itsdangerous" />
+            <item index="141" class="java.lang.String" itemvalue="lazy_loader" />
+            <item index="142" class="java.lang.String" itemvalue="scipy" />
+            <item index="143" class="java.lang.String" itemvalue="google-auth-oauthlib" />
+            <item index="144" class="java.lang.String" itemvalue="opencv-python" />
+            <item index="145" class="java.lang.String" itemvalue="cx-Freeze" />
+            <item index="146" class="java.lang.String" itemvalue="plotly" />
+            <item index="147" class="java.lang.String" itemvalue="torch" />
+            <item index="148" class="java.lang.String" itemvalue="tensorflow-io-gcs-filesystem" />
+            <item index="149" class="java.lang.String" itemvalue="pandas" />
+            <item index="150" class="java.lang.String" itemvalue="termcolor" />
+            <item index="151" class="java.lang.String" itemvalue="future" />
+            <item index="152" class="java.lang.String" itemvalue="typing_extensions" />
+            <item index="153" class="java.lang.String" itemvalue="cachetools" />
+            <item index="154" class="java.lang.String" itemvalue="webencodings" />
+            <item index="155" class="java.lang.String" itemvalue="Pillow" />
+            <item index="156" class="java.lang.String" itemvalue="html5lib" />
+            <item index="157" class="java.lang.String" itemvalue="threadpoolctl" />
+            <item index="158" class="java.lang.String" itemvalue="backports.cached-property" />
+            <item index="159" class="java.lang.String" itemvalue="googleapis-common-protos" />
+            <item index="160" class="java.lang.String" itemvalue="huggingface-hub" />
+            <item index="161" class="java.lang.String" itemvalue="python-dateutil" />
+            <item index="162" class="java.lang.String" itemvalue="Brotli" />
+            <item index="163" class="java.lang.String" itemvalue="cvxopt" />
+            <item index="164" class="java.lang.String" itemvalue="cycler" />
+            <item index="165" class="java.lang.String" itemvalue="MarkupSafe" />
+            <item index="166" class="java.lang.String" itemvalue="appdirs" />
+            <item index="167" class="java.lang.String" itemvalue="tslearn" />
+            <item index="168" class="java.lang.String" itemvalue="safetensors" />
+            <item index="169" class="java.lang.String" itemvalue="certifi" />
+            <item index="170" class="java.lang.String" itemvalue="ffmpeg" />
+            <item index="171" class="java.lang.String" itemvalue="dtwalign" />
+            <item index="172" class="java.lang.String" itemvalue="Markdown" />
+            <item index="173" class="java.lang.String" itemvalue="opencv-contrib-python" />
+            <item index="174" class="java.lang.String" itemvalue="dnspython" />
+            <item index="175" class="java.lang.String" itemvalue="h5py" />
+            <item index="176" class="java.lang.String" itemvalue="wrapt" />
+            <item index="177" class="java.lang.String" itemvalue="kiwisolver" />
+            <item index="178" class="java.lang.String" itemvalue="zope.interface" />
+            <item index="179" class="java.lang.String" itemvalue="Eel" />
+            <item index="180" class="java.lang.String" itemvalue="chromedrivermanager" />
+            <item index="181" class="java.lang.String" itemvalue="retrying" />
+            <item index="182" class="java.lang.String" itemvalue="virtualenv" />
+            <item index="183" class="java.lang.String" itemvalue="charset-normalizer" />
+            <item index="184" class="java.lang.String" itemvalue="CacheControl" />
+            <item index="185" class="java.lang.String" itemvalue="ffmpy" />
+            <item index="186" class="java.lang.String" itemvalue="dash" />
+            <item index="187" class="java.lang.String" itemvalue="async-timeout" />
+            <item index="188" class="java.lang.String" itemvalue="ptyprocess" />
+            <item index="189" class="java.lang.String" itemvalue="yt-dlp" />
+            <item index="190" class="java.lang.String" itemvalue="fastdtw" />
+            <item index="191" class="java.lang.String" itemvalue="more-itertools" />
+            <item index="192" class="java.lang.String" itemvalue="imageio-ffmpeg" />
+            <item index="193" class="java.lang.String" itemvalue="py2exe" />
+            <item index="194" class="java.lang.String" itemvalue="python-pcapng" />
+            <item index="195" class="java.lang.String" itemvalue="shiboken6" />
+            <item index="196" class="java.lang.String" itemvalue="importlib-metadata" />
+            <item index="197" class="java.lang.String" itemvalue="poetry-plugin-export" />
+            <item index="198" class="java.lang.String" itemvalue="requests-oauthlib" />
+            <item index="199" class="java.lang.String" itemvalue="urllib3" />
+            <item index="200" class="java.lang.String" itemvalue="zope.event" />
+            <item index="201" class="java.lang.String" itemvalue="Flask" />
+            <item index="202" class="java.lang.String" itemvalue="pyinstaller" />
+            <item index="203" class="java.lang.String" itemvalue="tcp" />
+            <item index="204" class="java.lang.String" itemvalue="keyboard" />
+            <item index="205" class="java.lang.String" itemvalue="crepe" />
+            <item index="206" class="java.lang.String" itemvalue="pymongo" />
+            <item index="207" class="java.lang.String" itemvalue="pytest" />
+            <item index="208" class="java.lang.String" itemvalue="dash-html-components" />
+            <item index="209" class="java.lang.String" itemvalue="dtw" />
+            <item index="210" class="java.lang.String" itemvalue="pytesseract" />
+            <item index="211" class="java.lang.String" itemvalue="pipreqs" />
+            <item index="212" class="java.lang.String" itemvalue="tqdm" />
+            <item index="213" class="java.lang.String" itemvalue="pytube" />
+            <item index="214" class="java.lang.String" itemvalue="build" />
+            <item index="215" class="java.lang.String" itemvalue="mplcursors" />
+            <item index="216" class="java.lang.String" itemvalue="tkcalendar" />
+            <item index="217" class="java.lang.String" itemvalue="colorama" />
+            <item index="218" class="java.lang.String" itemvalue="proto-plus" />
+            <item index="219" class="java.lang.String" itemvalue="whisper" />
+            <item index="220" class="java.lang.String" itemvalue="grpcio" />
+            <item index="221" class="java.lang.String" itemvalue="google-auth" />
+            <item index="222" class="java.lang.String" itemvalue="streamlit" />
+            <item index="223" class="java.lang.String" itemvalue="altair" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8Inspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="E266" />
+          <option value="E302" />
+          <option value="E265" />
+          <option value="E271" />
+          <option value="E303" />
+          <option value="E262" />
+          <option value="E251" />
+          <option value="E127" />
+          <option value="E301" />
+          <option value="E221" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N806" />
+          <option value="N803" />
+          <option value="N802" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyShadowingBuiltinsInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredNames">
+        <list>
+          <option value="list" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="cv2.imread" />
+          <option value="int.__getitem__" />
+          <option value="yt_dlp" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

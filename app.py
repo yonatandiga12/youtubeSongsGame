@@ -223,7 +223,7 @@ def main():
     
     with col1:
         st.markdown('<h2 class="sub-header">🎯 Enter Your Video Prompt</h2>', unsafe_allow_html=True)
-
+        
         # Prompt input
         with st.container():
             st.markdown('<div class="prompt-input">', unsafe_allow_html=True)
@@ -328,7 +328,7 @@ def main():
             # Check video availability
             if not current_video.get('available', True):
                 st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-                st.warning("⚠️ This video may not be available. Skip this song...")
+                st.warning("⚠️ This video may not be available. Skip to the next song...")
                 st.markdown('</div>', unsafe_allow_html=True)
             
 
@@ -395,7 +395,7 @@ def main():
             current_video = st.session_state.videos[current_index]
             if not current_video.get('available', True):
                 st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-                #st.warning("⚠️ This video may not be available. If it doesn't play, try the alternative link below.")
+                st.warning("⚠️ This video may not be available. If it doesn't play, try the alternative link below.")
                 st.markdown('</div>', unsafe_allow_html=True)
         
         # Create YouTube embed URL with autoplay
