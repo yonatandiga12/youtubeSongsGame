@@ -1166,5 +1166,5 @@ if "selected_video" in st.session_state:
 
 
 
-if __name__ == "__main__":
-    main() 
+# if __name__ == "__main__":
+#     main() 
