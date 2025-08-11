@@ -657,7 +657,7 @@ def _score_candidate(item, song_info) -> int:
     return score
 
 
-def _search_youtube_by_song(song_info, limit=10):
+def _search_youtube_by_song(song_info, limit=25):
     """Return best video_id (or None) for a given song_info."""
     query = _build_search_query(song_info)
     search = VideosSearch(query, limit=limit)
@@ -872,11 +872,11 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
                 'available': info.get("available", False)
             })
 
-            if len(video_ids) >= 10:
+            if len(video_ids) >= 25:
                 break
 
         st.session_state.song_details = song_details
-        return video_ids[:10]
+        return video_ids[:25]
 
     except Exception as e:
         st.error(f"Error: {e}")
@@ -896,7 +896,7 @@ def main():
         st.markdown("### 🎮 How to Play")
         st.markdown("""
         1. Enter a prompt describing the type of songs you want
-        2. Click 'Generate Videos' to get 10 song links
+        2. Click 'Generate Videos' to get 25 song links
         3. Click on any song button to play it
         4. Listen and try to guess what song it is and where it's from!
         """)
