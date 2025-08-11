@@ -653,6 +653,7 @@
 #     main() 
 
 
+
 import streamlit as st
 from openai import OpenAI
 from youtubesearchpython import VideosSearch
@@ -661,9 +662,6 @@ import re
 import requests
 
 # -------------- Helpers & Config --------------
-
-NUM_SONGS = 30
-
 
 def get_openai_api_key():
     return st.secrets.get("OPENAI_API_KEY")
@@ -815,6 +813,28 @@ def use_next_alternate_for_current_song():
     st.session_state.auto_play = True
 
 
+# -------------- Robust JSON extract --------------
+
+def safe_load_song_json(text: str):
+    """Try hard to load a JSON array from model output."""
+    try:
+        obj = json.loads(text)
+        if isinstance(obj, list):
+            return obj
+    except Exception:
+        pass
+    m = re.search(r"\[[\s\S]*\]", text)
+    if m:
+        snippet = m.group(0)
+        try:
+            obj = json.loads(snippet)
+            if isinstance(obj, list):
+                return obj
+        except Exception:
+            return None
+    return None
+
+
 # -------------- OpenAI + search orchestration --------------
 
 def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
@@ -836,23 +856,22 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
                 "link": "url link"
             }
         ]
-        Return exactly 30 songs. Make sure the JSON is valid."""
+        Return exactly 25 songs. Make sure the JSON is valid.
+        Output only the JSON array, with no extra text."""
 
-
-        # hard filter via persistent set regardless of GPT exclusions
+        # persistent set to avoid repeats across rounds
         if "seen_songs" not in st.session_state:
             st.session_state.seen_songs = set()
 
         if exclude_songs:
-            exc_list = [f"{s.get('title','')} by {s.get('artist','')}" for s in exclude_songs]
-            user_prompt = f"Suggest {NUM_SONGS} songs related to: {prompt}. Please avoid these songs: {', '.join(exc_list)}"
+            exc_list = [f"{s.get('title','')} by {s.get('artist','')" for s in exclude_songs]
+            user_prompt = f"Suggest 25 songs related to: {prompt}. Please avoid these songs: {', '.join(exc_list)}"
         else:
-            # also pass seen songs so GPT tries new content
             if st.session_state.seen_songs:
-                exc_list = [f"{t} by {a}" for (t,a) in st.session_state.seen_songs if t and a]
-                user_prompt = f"Suggest {NUM_SONGS} songs related to: {prompt}. Please avoid these songs: {', '.join(exc_list[:40])}"
+                exc_list = [f"{t} by {a}" for (t, a) in st.session_state.seen_songs if t and a]
+                user_prompt = f"Suggest 25 songs related to: {prompt}. Please avoid these songs: {', '.join(exc_list[:40])}"
             else:
-                user_prompt = f"Suggest {NUM_SONGS} songs related to: {prompt}"
+                user_prompt = f"Suggest 25 songs related to: {prompt}"
 
         api_key = get_openai_api_key()
         if not api_key:
@@ -862,24 +881,35 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
         client = OpenAI(api_key=api_key)
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-            max_tokens=1000,
-            temperature=0.7,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=2000,
+            temperature=0.25,
         )
 
         content = response.choices[0].message.content.strip()
+        song_data = safe_load_song_json(content)
 
-        try:
-            song_data = json.loads(content)
-        except json.JSONDecodeError:
-            st.warning("ChatGPT didn't return valid JSON. Using generic YouTube search...")
-            generic = VideosSearch(prompt, limit=NUM_SONGS).result().get("result", [])
-            video_ids = []
-            for v in generic:
-                ids = extract_youtube_links(v.get("link", ""))
-                if ids:
-                    video_ids.append(ids[0])
-            return video_ids[:NUM_SONGS]
+        if song_data is None:
+            st.warning("ChatGPT didn't return valid JSON. Retrying…")
+            strict_prompt = user_prompt + "\n\nReturn only a valid JSON array (no Markdown, no prose, no trailing commas)."
+            response2 = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": strict_prompt},
+                ],
+                max_tokens=2000,
+                temperature=0.2,
+            )
+            content2 = response2.choices[0].message.content.strip()
+            song_data = safe_load_song_json(content2)
+
+        if song_data is None:
+            st.error("Couldn't parse songs from the model. Please try again.")
+            return []
 
         video_ids = []
         song_details = []
@@ -920,12 +950,12 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
 
             st.session_state.seen_songs.add(key)
 
-            if len(video_ids) >= NUM_SONGS:
+            if len(video_ids) >= 25:
                 break
 
         st.session_state.song_details = song_details
         st.session_state.song_candidates = song_candidates_map
-        return video_ids[:NUM_SONGS]
+        return video_ids[:25]
 
     except Exception as e:
         st.error(f"Error: {e}")
@@ -939,7 +969,10 @@ st.markdown('<div class="main-header">🎵 YouTube Video Game 🎵</div>', unsaf
 with st.sidebar:
     st.markdown('<div class="centered-text"><h3>🎮 How to Play</h3></div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="centered-text">1. Enter a prompt describing the type of songs you want<br>2. Click "Generate Videos" to get 10 song links<br>3. Click on any song button to play it<br>4. Try to guess what song it is and where it\'s from!</div>',
+        '<div class="centered-text">1. Enter a prompt describing the type of songs you want<br>'
+        '2. Click "Generate Videos" to get 25 song links<br>'
+        '3. Click on any song button to play it<br>'
+        '4. Try to guess what song it is and where it\'s from!</div>',
         unsafe_allow_html=True,
     )
     st.markdown("<hr>", unsafe_allow_html=True)
@@ -995,7 +1028,6 @@ with col_left:
                 st.info("Please add your API key in Streamlit Cloud Settings → Secrets")
             else:
                 with st.spinner("🎵 Generating new songs..."):
-                    # we rely on st.session_state.seen_songs for persistent exclusions
                     video_ids = get_youtube_videos_with_chatgpt(prompt)
                     if video_ids:
                         st.success(f"🎉 Found {len(video_ids)} new songs!")
@@ -1035,7 +1067,7 @@ if "videos" in st.session_state and st.session_state.videos:
             st.warning("⚠️ This video may not be available. Try an alternate link below…")
             st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center;">', unsafe_allow_allow_html=True)
         c1, c2, c3, c4 = st.columns([1, 1, 1, 1])
         with c1:
             if st.button("🔍 Reveal Song", key="reveal_current", use_container_width=True):
@@ -1167,5 +1199,4 @@ if "selected_video" in st.session_state:
     if st.button("❌ Close Player"):
         del st.session_state.selected_video
         st.rerun()
-
 
