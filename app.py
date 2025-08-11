@@ -1,14 +1,13 @@
+
 import streamlit as st
 from openai import OpenAI
 from youtubesearchpython import VideosSearch
 import json
 import re
 
-
 # Configure OpenAI - only from Streamlit secrets
 def get_openai_api_key():
     return st.secrets.get("OPENAI_API_KEY")
-
 
 
 def _build_search_query(song_info):
@@ -111,6 +110,8 @@ def _search_youtube_by_song(song_info, limit=10):
     return None
 
 
+
+
 # Page configuration
 st.set_page_config(
     page_title="YouTube Video Game",
@@ -196,7 +197,6 @@ def get_video_info(video_id):
             'video_id': video_id,
             'available': False
         }
-
 
 
 def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
@@ -295,104 +295,6 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
         return []
 
 
-
-
-# def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
-#     """Use ChatGPT to get song suggestions, then search YouTube for those songs"""
-#     try:
-#         # First, use ChatGPT to suggest songs based on the prompt
-#         system_prompt = """You are a helpful assistant that suggests songs based on user prompts.
-#         For each suggestion, provide:
-#         1. The song title
-#         2. The movie/show/game it's from (if applicable)
-#         3. The artist/band name
-#         4. link to youtube
-
-#         Return the information in this exact JSON format:
-#         [
-#             {
-#                 "title": "Song Title",
-#                 "source": "Movie/Show/Game Name",
-#                 "artist": "Artist/Band Name",
-#                 "link": "url link"
-#             }
-#         ]
-        
-#         Return exactly 10 songs. Make sure the JSON is valid."""
-        
-#         # Add exclusion instruction if we have previous songs
-#         if exclude_songs:
-#             exclude_list = [f"{song['title']} by {song['artist']}" for song in exclude_songs]
-#             user_prompt = f"Suggest 10 songs related to: {prompt}. Please avoid these songs: {', '.join(exclude_list)}"
-#         else:
-#             user_prompt = f"Suggest 10 songs related to: {prompt}"
-        
-#         from openai import OpenAI
-        
-#         # Get API key from Streamlit secrets
-#         api_key = get_openai_api_key()
-#         if not api_key:
-#             st.error("❌ OpenAI API key not found in Streamlit Cloud secrets!")
-#             return []
-            
-#         client = OpenAI(api_key=api_key)
-#         response = client.chat.completions.create(
-#             model="gpt-3.5-turbo",
-#             messages=[
-#                 {"role": "system", "content": system_prompt},
-#                 {"role": "user", "content": user_prompt}
-#             ],
-#             max_tokens=1000,
-#             temperature=0.7
-#         )
-        
-#         content = response.choices[0].message.content.strip()
-        
-#         # Try to parse JSON response
-#         try:
-#             import json
-#             song_data = json.loads(content)
-#             video_ids = []
-#             song_details = []
-            
-#             # Process each song suggested by GPT
-#             for song_info in song_data:
-#                 # Extract video ID from the link provided by GPT
-#                 video_link = song_info.get('link', '')
-#                 extracted_ids = extract_youtube_links(video_link)
-                
-#                 if extracted_ids:
-#                     video_ids.append(extracted_ids[0])
-#                     song_details.append({
-#                         'title': song_info.get('title', 'Unknown Title'),
-#                         'source': song_info.get('source', 'Unknown Source'),
-#                         'artist': song_info.get('artist', 'Unknown Artist'),
-#                         'video_id': extracted_ids[0]
-#                     })
-            
-#             # Store song details in session state
-#             st.session_state.song_details = song_details
-            
-#             return video_ids[:10]  # Return max 10 videos
-            
-#         except json.JSONDecodeError:
-#             st.warning("ChatGPT didn't return valid JSON. Using fallback method...")
-#             # Fallback to direct YouTube search
-#             search = VideosSearch(prompt, limit=10)
-#             results = search.result()
-#             video_ids = []
-            
-#             for video in results.get('result', []):
-#                 video_url = video.get('link', '')
-#                 extracted_ids = extract_youtube_links(video_url)
-#                 if extracted_ids:
-#                     video_ids.append(extracted_ids[0])
-            
-#             return video_ids[:10]
-        
-#     except Exception as e:
-#         st.error(f"Error: {e}")
-#         return []
 
 def main():
     # Main header
@@ -646,8 +548,6 @@ def main():
         if st.button("❌ Close Player"):
             del st.session_state.selected_video
             st.rerun()
-
-
 
 if __name__ == "__main__":
     main() 
