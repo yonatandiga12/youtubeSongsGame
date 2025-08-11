@@ -821,22 +821,23 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
     """Use GPT for song list; search YouTube ourselves; store alternates; avoid repeats across rounds."""
     try:
         system_prompt = f"""You are a helpful assistant that suggests songs based on user prompts.
-            For each suggestion, provide:
-            1. The song title
-            2. The movie/show/game it's from (if applicable)
-            3. The artist/band name
-            4. link to youtube
+        For each suggestion, provide:
+        1. The song title
+        2. The movie/show/game it's from (if applicable)
+        3. The artist/band name
+        4. link to youtube
 
-            Return the information in this exact JSON format:
-            [
-                {
-                    "title": "Song Title",
-                    "source": "Movie/Show/Game Name",
-                    "artist": "Artist/Band Name",
-                    "link": "url link"
-                }
-            ]
-            Return exactly {NUM_SONGS} songs. Make sure the JSON is valid."""
+        Return the information in this exact JSON format:
+        [
+            {{
+                "title": "Song Title",
+                "source": "Movie/Show/Game Name",
+                "artist": "Artist/Band Name",
+                "link": "url link"
+            }}
+        ]
+        Return exactly {NUM_SONGS} songs. Make sure the JSON is valid."""
+
 
         # hard filter via persistent set regardless of GPT exclusions
         if "seen_songs" not in st.session_state:
