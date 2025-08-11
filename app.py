@@ -658,7 +658,6 @@ import requests
 
 # -------------- Helpers & Config --------------
 
-NUM_SONGS = 30
 
 
 def get_openai_api_key():
@@ -832,7 +831,7 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
                 "link": "url link"
             }
         ]
-        Return exactly {NUM_SONGS} songs. Make sure the JSON is valid."""
+        Return exactly 25 songs. Make sure the JSON is valid."""
 
         # hard filter via persistent set regardless of GPT exclusions
         if "seen_songs" not in st.session_state:
@@ -840,14 +839,14 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
 
         if exclude_songs:
             exc_list = [f"{s.get('title','')} by {s.get('artist','')}" for s in exclude_songs]
-            user_prompt = f"Suggest {NUM_SONGS} songs related to: {prompt}. Please avoid these songs: {', '.join(exc_list)}"
+            user_prompt = f"Suggest 25 songs related to: {prompt}. Please avoid these songs: {', '.join(exc_list)}"
         else:
             # also pass seen songs so GPT tries new content
             if st.session_state.seen_songs:
                 exc_list = [f"{t} by {a}" for (t,a) in st.session_state.seen_songs if t and a]
-                user_prompt = f"Suggest {NUM_SONGS} songs related to: {prompt}. Please avoid these songs: {', '.join(exc_list[:40])}"
+                user_prompt = f"Suggest 25 songs related to: {prompt}. Please avoid these songs: {', '.join(exc_list[:40])}"
             else:
-                user_prompt = f"Suggest {NUM_SONGS} songs related to: {prompt}"
+                user_prompt = f"Suggest 25 songs related to: {prompt}"
 
         api_key = get_openai_api_key()
         if not api_key:
@@ -868,13 +867,13 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
             song_data = json.loads(content)
         except json.JSONDecodeError:
             st.warning("ChatGPT didn't return valid JSON. Using generic YouTube search...")
-            generic = VideosSearch(prompt, limit=10).result().get("result", [])
+            generic = VideosSearch(prompt, limit=25).result().get("result", [])
             video_ids = []
             for v in generic:
                 ids = extract_youtube_links(v.get("link", ""))
                 if ids:
                     video_ids.append(ids[0])
-            return video_ids[:10]
+            return video_ids[:25]
 
         video_ids = []
         song_details = []
@@ -915,12 +914,12 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
 
             st.session_state.seen_songs.add(key)
 
-            if len(video_ids) >= 10:
+            if len(video_ids) >= 25:
                 break
 
         st.session_state.song_details = song_details
         st.session_state.song_candidates = song_candidates_map
-        return video_ids[:10]
+        return video_ids[:25]
 
     except Exception as e:
         st.error(f"Error: {e}")
