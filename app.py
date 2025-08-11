@@ -649,6 +649,10 @@
 
 
 
+# if __name__ == "__main__":
+#     main() 
+
+
 import streamlit as st
 from openai import OpenAI
 from youtubesearchpython import VideosSearch
@@ -816,23 +820,23 @@ def use_next_alternate_for_current_song():
 def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
     """Use GPT for song list; search YouTube ourselves; store alternates; avoid repeats across rounds."""
     try:
-        system_prompt = """You are a helpful assistant that suggests songs based on user prompts.
-        For each suggestion, provide:
-        1. The song title
-        2. The movie/show/game it's from (if applicable)
-        3. The artist/band name
-        4. link to youtube
+        system_prompt = f"""You are a helpful assistant that suggests songs based on user prompts.
+            For each suggestion, provide:
+            1. The song title
+            2. The movie/show/game it's from (if applicable)
+            3. The artist/band name
+            4. link to youtube
 
-        Return the information in this exact JSON format:
-        [
-            {
-                "title": "Song Title",
-                "source": "Movie/Show/Game Name",
-                "artist": "Artist/Band Name",
-                "link": "url link"
-            }
-        ]
-        Return exactly {NUM_SONGS} songs. Make sure the JSON is valid."""
+            Return the information in this exact JSON format:
+            [
+                {
+                    "title": "Song Title",
+                    "source": "Movie/Show/Game Name",
+                    "artist": "Artist/Band Name",
+                    "link": "url link"
+                }
+            ]
+            Return exactly {NUM_SONGS} songs. Make sure the JSON is valid."""
 
         # hard filter via persistent set regardless of GPT exclusions
         if "seen_songs" not in st.session_state:
@@ -868,13 +872,13 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
             song_data = json.loads(content)
         except json.JSONDecodeError:
             st.warning("ChatGPT didn't return valid JSON. Using generic YouTube search...")
-            generic = VideosSearch(prompt, limit=10).result().get("result", [])
+            generic = VideosSearch(prompt, limit=NUM_SONGS).result().get("result", [])
             video_ids = []
             for v in generic:
                 ids = extract_youtube_links(v.get("link", ""))
                 if ids:
                     video_ids.append(ids[0])
-            return video_ids[:10]
+            return video_ids[:NUM_SONGS]
 
         video_ids = []
         song_details = []
@@ -915,12 +919,12 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
 
             st.session_state.seen_songs.add(key)
 
-            if len(video_ids) >= 10:
+            if len(video_ids) >= NUM_SONGS:
                 break
 
         st.session_state.song_details = song_details
         st.session_state.song_candidates = song_candidates_map
-        return video_ids[:10]
+        return video_ids[:NUM_SONGS]
 
     except Exception as e:
         st.error(f"Error: {e}")
@@ -1164,7 +1168,3 @@ if "selected_video" in st.session_state:
         st.rerun()
 
 
-
-
-# if __name__ == "__main__":
-#     main() 
