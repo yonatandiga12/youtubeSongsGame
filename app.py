@@ -814,9 +814,8 @@ def use_next_alternate_for_current_song():
 
 
 # -------------- Robust JSON extract --------------
-
 def safe_load_song_json(text: str):
-    """Try hard to load a JSON array from model output."""
+    # robustly extract a JSON array from model output
     try:
         obj = json.loads(text)
         if isinstance(obj, list):
@@ -825,17 +824,14 @@ def safe_load_song_json(text: str):
         pass
     m = re.search(r"\[[\s\S]*\]", text)
     if m:
-        snippet = m.group(0)
         try:
-            obj = json.loads(snippet)
+            obj = json.loads(m.group(0))
             if isinstance(obj, list):
                 return obj
         except Exception:
             return None
     return None
 
-
-# -------------- OpenAI + search orchestration --------------
 
 def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
     """Use GPT for song list; search YouTube ourselves; store alternates; avoid repeats across rounds."""
@@ -859,16 +855,15 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
         Return exactly 25 songs. Make sure the JSON is valid.
         Output only the JSON array, with no extra text."""
 
-        # persistent set to avoid repeats across rounds
         if "seen_songs" not in st.session_state:
             st.session_state.seen_songs = set()
 
         if exclude_songs:
-            exc_list = [f"{s.get('title','')} by {s.get('artist','')" for s in exclude_songs]
+            exc_list = [f"{s.get('title','')} by {s.get('artist','')}" for s in exclude_songs]
             user_prompt = f"Suggest 25 songs related to: {prompt}. Please avoid these songs: {', '.join(exc_list)}"
         else:
             if st.session_state.seen_songs:
-                exc_list = [f"{t} by {a}" for (t, a) in st.session_state.seen_songs if t and a]
+                exc_list = [f"{t} by {a}" for (t,a) in st.session_state.seen_songs if t and a]
                 user_prompt = f"Suggest 25 songs related to: {prompt}. Please avoid these songs: {', '.join(exc_list[:40])}"
             else:
                 user_prompt = f"Suggest 25 songs related to: {prompt}"
@@ -879,45 +874,40 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
             return []
 
         client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
+        resp = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
+            messages=[{"role": "system", "content": system_prompt},
+                      {"role": "user", "content": user_prompt}],
             max_tokens=2000,
             temperature=0.25,
         )
-
-        content = response.choices[0].message.content.strip()
+        content = resp.choices[0].message.content.strip()
         song_data = safe_load_song_json(content)
 
         if song_data is None:
             st.warning("ChatGPT didn't return valid JSON. Retrying…")
             strict_prompt = user_prompt + "\n\nReturn only a valid JSON array (no Markdown, no prose, no trailing commas)."
-            response2 = client.chat.completions.create(
+            resp2 = client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": strict_prompt},
-                ],
+                messages=[{"role": "system", "content": system_prompt},
+                          {"role": "user", "content": strict_prompt}],
                 max_tokens=2000,
                 temperature=0.2,
             )
-            content2 = response2.choices[0].message.content.strip()
+            content2 = resp2.choices[0].message.content.strip()
             song_data = safe_load_song_json(content2)
 
         if song_data is None:
             st.error("Couldn't parse songs from the model. Please try again.")
-            return []
+            return []  # <-- no generic VideosSearch fallback anymore
 
-        video_ids = []
-        song_details = []
-        song_candidates_map = {}
-        seen_ids = set()
+        video_ids, song_details, song_candidates_map, seen_ids = [], [], {}, set()
 
         for song_info in song_data:
-            key = _normalize_key(song_info)
+            key = (
+                (song_info.get("title","").strip().lower()),
+                (song_info.get("artist","").strip().lower()),
+            )
             if key in st.session_state.seen_songs:
                 continue
 
@@ -931,23 +921,18 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
                     chosen = vid
                     break
             chosen = chosen or candidates[0]
-
             if chosen in seen_ids:
                 continue
 
             idx = len(video_ids)
             song_candidates_map[idx] = candidates
-
             video_ids.append(chosen)
-            song_details.append(
-                {
-                    "title": song_info.get("title", "Unknown Title"),
-                    "source": song_info.get("source", "Unknown Source"),
-                    "artist": song_info.get("artist", "Unknown Artist"),
-                    "video_id": chosen,
-                }
-            )
-
+            song_details.append({
+                "title": song_info.get("title", "Unknown Title"),
+                "source": song_info.get("source", "Unknown Source"),
+                "artist": song_info.get("artist", "Unknown Artist"),
+                "video_id": chosen,
+            })
             st.session_state.seen_songs.add(key)
 
             if len(video_ids) >= 25:
