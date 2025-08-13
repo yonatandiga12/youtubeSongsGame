@@ -463,12 +463,12 @@ def main():
         - "video game music"
         """)
     
-
+    render_debug_panel()
 
     # Main content area
     col1, col2 = st.columns([2, 1])
     
-    render_debug_panel()
+    
     
     with col1:
         st.markdown('<h2 class="sub-header">🎯 Enter Your Video Prompt</h2>', unsafe_allow_html=True)
