@@ -535,6 +535,7 @@ def main():
                 else:
                     with st.spinner("🎵 Generating your video collection..."):
                         video_ids = get_youtube_videos_with_chatgpt(prompt)
+                        debug_message(video_ids)
                         if video_ids:
                             st.success(f"🎉 Found {len(video_ids)} videos!")
                             
