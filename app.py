@@ -389,12 +389,16 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
         video_ids = []
         song_details = []
 
+        debug_log("got here 0")
+
         for song in song_data:
             title = song.get('title', '')
             artist = song.get('artist', '')
             source = song.get('source', 'Unknown Source')
 
             yt_url = search_youtube_for_song(title, artist)
+            debug_log("got here 4")
+
             if yt_url:
                 extracted_ids = extract_youtube_links(yt_url)
                 if extracted_ids:
