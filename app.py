@@ -313,41 +313,6 @@ def extract_youtube_links(url):
     return [match.group(1)] if match else []
 
 
-def search_youtube_for_song(title, artist):
-    query = f"{title} {artist} official"
-    search_url = f"ytsearch5:{query}"  # Try 5 results instead of 1
-    try:
-        result = subprocess.run(
-            ["yt-dlp", "--dump-json", search_url],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            timeout=30
-        )
-
-        if result.returncode == 0:
-            # yt-dlp outputs one JSON line per video
-            for line in result.stdout.splitlines():
-                try:
-                    video_json = json.loads(line)
-                    if not video_json.get("is_unavailable"):
-                        video_id = video_json["id"]
-                        debug_message(f"✅ Found video: {video_id}")#
-                        return video_id
-                except json.JSONDecodeError:
-                    continue
-
-            debug_message("⚠️ No available videos found")
-        else:
-            debug_message(f"❌ yt-dlp error: {result.stderr}")
-    except Exception as e:
-        debug_message("❌ yt-dlp exception")
-        st.error(f"Error using yt-dlp: {e}")
-
-    return None
-
-
-
 
 def search_youtube_for_song(title, artist):
     query = f"{title} {artist} karaoke"
@@ -365,7 +330,7 @@ def search_youtube_for_song(title, artist):
         
             debug_message(f"17 {video_json["id"]} , {video_json["webpage_url"]}")
         
-            return video_json["id"]  # or video_json["webpage_url"]
+            return video_json["webpage_url"]  # or video_json["webpage_url"]
         else:
             debug_message(f"error {result.stderr}")
             print(result.stderr)
