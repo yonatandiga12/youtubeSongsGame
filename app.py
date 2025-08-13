@@ -343,7 +343,7 @@ def search_youtube_for_song(title, artist):
                     video_json = json.loads(line)
                     if not video_json.get("is_unavailable"):
                         video_id = video_json["id"]
-                        debug_message(f"✅ Found video: {video_id}")
+                        debug_message(f"✅ Found video: {video_id}")#
                         return video_id
                 except json.JSONDecodeError:
                     continue
