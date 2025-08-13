@@ -392,10 +392,11 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
         debug_log("got here 0")
 
         for song in song_data:
+            debug_log("got here 1")
             title = song.get('title', '')
             artist = song.get('artist', '')
             source = song.get('source', 'Unknown Source')
-
+            debug_log("got here 5")
             yt_url = search_youtube_for_song(title, artist)
             debug_log("got here 4")
 
@@ -410,7 +411,7 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
                         'video_id': extracted_ids[0]
                     })
 
-        debug_log("got here 1")
+        
 
         st.session_state.song_details = song_details
         return video_ids[:20]
