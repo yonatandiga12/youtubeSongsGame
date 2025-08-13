@@ -325,11 +325,17 @@ def extract_youtube_links(url):
 
 # Helper: search YouTube using title and artist
 def search_youtube_for_song(title, artist):
+    debug_message("got here 8")
     query = f"{title} {artist} vevo official"
+    debug_message("got here 9")
     search = VideosSearch(query, limit=1)
+    debug_message("got here 10")
     results = search.result()
+    debug_message("got here 11")
     if results.get('result'):
+        debug_message("got here 12")
         return results['result'][0].get('link')
+    debug_message("got here 13")
     return None
 
 # MAIN FUNCTION
@@ -384,15 +390,14 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
         video_ids = []
         song_details = []
 
-        debug_message("got here 7")
-        
+
         for song in song_data:
-            debug_message("got here 1")
             title = song.get('title', '')
             artist = song.get('artist', '')
             source = song.get('source', 'Unknown Source')
-            debug_message("got here 2")
+            debug_message("got here 1")
             yt_url = search_youtube_for_song(title, artist)
+            debug_message("got here 3")
 
             if yt_url:
                 extracted_ids = extract_youtube_links(yt_url)
