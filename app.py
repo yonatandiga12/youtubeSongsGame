@@ -305,20 +305,15 @@ def get_video_info(video_id):
 #         return []
 
 
-def debug_log(message):
-    """Add debug message to the debug panel (bottom of screen)"""
-    if "debug_messages" not in st.session_state:
-        st.session_state.debug_messages = []
-    st.session_state.debug_messages.append(str(message))
-
-def render_debug_panel():
-    """Render all debug messages at the bottom of the screen"""
-    if st.session_state.get("debug_messages"):
-        with st.expander("🛠️ Debug Output (click to expand)", expanded=False):
-            for i, msg in enumerate(st.session_state.debug_messages):
-                st.markdown(f"**{i+1}.** {msg}")
-
-
+def debug_message(message: str):
+    st.markdown(
+        f"""
+        <div style="background-color:#ffe8cc; padding:10px; border-radius:5px; border-left: 4px solid #ffa94d; margin-top:20px;">
+            <strong>🛠 Debug:</strong> {message}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # Helper: extract video ID from YouTube URL
@@ -389,16 +384,15 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
         video_ids = []
         song_details = []
 
-        debug_log("got here 0")
-
+        debug_message("got here 7")
+        
         for song in song_data:
-            debug_log("got here 1")
+            debug_message("got here 1")
             title = song.get('title', '')
             artist = song.get('artist', '')
             source = song.get('source', 'Unknown Source')
-            debug_log("got here 5")
+            debug_message("got here 2")
             yt_url = search_youtube_for_song(title, artist)
-            debug_log("got here 4")
 
             if yt_url:
                 extracted_ids = extract_youtube_links(yt_url)
@@ -464,7 +458,6 @@ def main():
         - "video game music"
         """)
     
-    render_debug_panel()
 
     # Main content area
     col1, col2 = st.columns([2, 1])
@@ -497,7 +490,6 @@ def main():
                 else:
                     with st.spinner("🎵 Generating your video collection..."):
                         video_ids = get_youtube_videos_with_chatgpt(prompt)
-                        debug_log("got here 2")
                         if video_ids:
                             st.success(f"🎉 Found {len(video_ids)} videos!")
                             
