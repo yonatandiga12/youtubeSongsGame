@@ -327,7 +327,7 @@ def extract_youtube_links(url):
 def search_youtube_for_song(title, artist):
     debug_message("got here 8")
     query = f"{title} {artist} vevo official"
-    debug_message("got here 9")
+    debug_message(f"got here 9 {query}")
     search = VideosSearch(query, limit=1)
     debug_message("got here 10")
     results = search.result()
