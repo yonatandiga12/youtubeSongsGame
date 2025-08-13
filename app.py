@@ -328,23 +328,26 @@ def extract_youtube_links(url):
 def search_youtube_for_song(title, artist):
     query = f"{title} {artist} official"
     search_url = f"ytsearch1:{query}"  # ytsearch1: returns 1 result
-    debug_message("15")
     try:
         result = subprocess.run(
             ["yt-dlp", "--dump-json", search_url],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            timeout=10
+            timeout=20
         )
-        debug_message("16")
-        if result.returncode == 0:
-            debug_message("17")
+        if result.returncode == 0:    
             video_json = json.loads(result.stdout.splitlines()[0])
+        
+            debug_message(f"17 {video_json["id"]} , {video_json["webpage_url"]}")
+        
             return video_json["id"]  # or video_json["webpage_url"]
         else:
             print(result.stderr)
     except Exception as e:
+        
+        debug_message("error")
+        
         st.error(f"Error using yt-dlp: {e}")
 
     return None
