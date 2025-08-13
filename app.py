@@ -259,6 +259,7 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
         
         content = response.choices[0].message.content.strip()
         
+        debug_message(content)
         # Try to parse JSON response
         try:
             import json
