@@ -399,14 +399,14 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
             }
         ]
 
-        Return exactly 20 songs. Make sure the JSON is valid."""
+        Return exactly 5 songs. Make sure the JSON is valid."""
 
         # Compose user prompt
         if exclude_songs:
             exclude_list = [f"{song['title']} by {song['artist']}" for song in exclude_songs]
-            user_prompt = f"Suggest 20 songs related to: {prompt}. Please avoid these songs: {', '.join(exclude_list)}"
+            user_prompt = f"Suggest 5 songs related to: {prompt}. Please avoid these songs: {', '.join(exclude_list)}"
         else:
-            user_prompt = f"Suggest 20 songs related to: {prompt}"
+            user_prompt = f"Suggest 5 songs related to: {prompt}"
 
         # Call OpenAI
         api_key = get_openai_api_key()
@@ -453,7 +453,7 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
         
 
         st.session_state.song_details = song_details
-        return video_ids[:20]
+        return video_ids[:5]
 
     except json.JSONDecodeError:
         st.error("❌ Couldn't parse song list. Try again.")
