@@ -158,21 +158,21 @@ st.markdown("""
 
 
 
-def extract_youtube_links(text):
-    """Extract YouTube video IDs from text using regex"""
-    # Pattern to match YouTube URLs
-    patterns = [
-        r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]+)',
-        r'(?:https?://)?(?:www\.)?youtu\.be/([a-zA-Z0-9_-]+)',
-        r'(?:https?://)?(?:www\.)?youtube\.com/embed/([a-zA-Z0-9_-]+)'
-    ]
+# def extract_youtube_links(text):
+#     """Extract YouTube video IDs from text using regex"""
+#     # Pattern to match YouTube URLs
+#     patterns = [
+#         r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]+)',
+#         r'(?:https?://)?(?:www\.)?youtu\.be/([a-zA-Z0-9_-]+)',
+#         r'(?:https?://)?(?:www\.)?youtube\.com/embed/([a-zA-Z0-9_-]+)'
+#     ]
     
-    video_ids = []
-    for pattern in patterns:
-        matches = re.findall(pattern, text)
-        video_ids.extend(matches)
+#     video_ids = []
+#     for pattern in patterns:
+#         matches = re.findall(pattern, text)
+#         video_ids.extend(matches)
     
-    return list(set(video_ids))  # Remove duplicates
+#     return list(set(video_ids))  # Remove duplicates
 
 
 def get_video_info(video_id):
@@ -208,91 +208,91 @@ def get_video_info(video_id):
 
 
 
-def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
-    """Use ChatGPT to get song suggestions, then search YouTube for those songs"""
-    try:
-        # First, use ChatGPT to suggest songs based on the prompt
-        system_prompt = """You are a helpful assistant that suggests songs based on user prompts.
-        For each suggestion, provide:
-        1. The song title
-        2. The movie/show/game it's from (if applicable)
-        3. The artist/band name
-        4. link to youtube - KARAOKE VERSION
+# def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
+#     """Use ChatGPT to get song suggestions, then search YouTube for those songs"""
+#     try:
+#         # First, use ChatGPT to suggest songs based on the prompt
+#         system_prompt = """You are a helpful assistant that suggests songs based on user prompts.
+#         For each suggestion, provide:
+#         1. The song title
+#         2. The movie/show/game it's from (if applicable)
+#         3. The artist/band name
+#         4. link to youtube - KARAOKE VERSION
 
-        Return the information in this exact JSON format:
-        [
-            {
-                "title": "Song Title",
-                "source": "Movie/Show/Game Name",
-                "artist": "Artist/Band Name",
-                "link": "url link"
-            }
-        ]
+#         Return the information in this exact JSON format:
+#         [
+#             {
+#                 "title": "Song Title",
+#                 "source": "Movie/Show/Game Name",
+#                 "artist": "Artist/Band Name",
+#                 "link": "url link"
+#             }
+#         ]
         
-        Return exactly 20 songs. Make sure the JSON is valid and return only the json."""
+#         Return exactly 20 songs. Make sure the JSON is valid and return only the json."""
         
-        # Add exclusion instruction if we have previous songs
-        if exclude_songs:
-            exclude_list = [f"{song['title']} by {song['artist']}" for song in exclude_songs]
-            user_prompt = f"Suggest 20 songs related to: {prompt}. Please avoid these songs: {', '.join(exclude_list)}"
-        else:
-            user_prompt = f"Suggest 20 songs related to: {prompt}"
+#         # Add exclusion instruction if we have previous songs
+#         if exclude_songs:
+#             exclude_list = [f"{song['title']} by {song['artist']}" for song in exclude_songs]
+#             user_prompt = f"Suggest 20 songs related to: {prompt}. Please avoid these songs: {', '.join(exclude_list)}"
+#         else:
+#             user_prompt = f"Suggest 20 songs related to: {prompt}"
         
-        from openai import OpenAI
+#         from openai import OpenAI
         
-        # Get API key from Streamlit secrets
-        api_key = get_openai_api_key()
-        if not api_key:
-            st.error("❌ OpenAI API key not found in Streamlit Cloud secrets!")
-            return []
+#         # Get API key from Streamlit secrets
+#         api_key = get_openai_api_key()
+#         if not api_key:
+#             st.error("❌ OpenAI API key not found in Streamlit Cloud secrets!")
+#             return []
             
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            max_tokens=1000,
-            temperature=0.7
-        )
+#         client = OpenAI(api_key=api_key)
+#         response = client.chat.completions.create(
+#             model="gpt-3.5-turbo",
+#             messages=[
+#                 {"role": "system", "content": system_prompt},
+#                 {"role": "user", "content": user_prompt}
+#             ],
+#             max_tokens=1000,
+#             temperature=0.7
+#         )
         
-        content = response.choices[0].message.content.strip()
+#         content = response.choices[0].message.content.strip()
         
-        debug_message(content)
-        # Try to parse JSON response
-        try:
-            import json
-            song_data = json.loads(content)
-            video_ids = []
-            song_details = []
+#         debug_message(content)
+#         # Try to parse JSON response
+#         try:
+#             import json
+#             song_data = json.loads(content)
+#             video_ids = []
+#             song_details = []
             
-            # Process each song suggested by GPT
-            for song_info in song_data:
-                # Extract video ID from the link provided by GPT
-                video_link = song_info.get('link', '')
-                extracted_ids = extract_youtube_links(video_link)
+#             # Process each song suggested by GPT
+#             for song_info in song_data:
+#                 # Extract video ID from the link provided by GPT
+#                 video_link = song_info.get('link', '')
+#                 extracted_ids = extract_youtube_links(video_link)
                 
-                if extracted_ids:
-                    video_ids.append(extracted_ids[0])
-                    song_details.append({
-                        'title': song_info.get('title', 'Unknown Title'),
-                        'source': song_info.get('source', 'Unknown Source'),
-                        'artist': song_info.get('artist', 'Unknown Artist'),
-                        'video_id': extracted_ids[0]
-                    })
+#                 if extracted_ids:
+#                     video_ids.append(extracted_ids[0])
+#                     song_details.append({
+#                         'title': song_info.get('title', 'Unknown Title'),
+#                         'source': song_info.get('source', 'Unknown Source'),
+#                         'artist': song_info.get('artist', 'Unknown Artist'),
+#                         'video_id': extracted_ids[0]
+#                     })
             
-            # Store song details in session state
-            st.session_state.song_details = song_details
+#             # Store song details in session state
+#             st.session_state.song_details = song_details
             
-            return video_ids[:20]  # Return max 10 videos
+#             return video_ids[:20]  # Return max 10 videos
             
-        except json.JSONDecodeError:
-            st.warning("ChatGPT didn't return valid JSON. Using fallback method...")
+#         except json.JSONDecodeError:
+#             st.warning("ChatGPT didn't return valid JSON. Using fallback method...")
             
-    except Exception as e:
-        st.error(f"Error: {e}")
-        return []
+#     except Exception as e:
+#         st.error(f"Error: {e}")
+#         return []
 
 
 def debug_message(message: str):
@@ -306,162 +306,162 @@ def debug_message(message: str):
     )
 
 
-# # Helper: extract video ID from YouTube URL
-# def extract_youtube_links(url):
-#     import re
-#     match = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", url)
-#     return [match.group(1)] if match else []
+# Helper: extract video ID from YouTube URL
+def extract_youtube_links(url):
+    import re
+    match = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", url)
+    return [match.group(1)] if match else []
 
 
-# def search_youtube_for_song(title, artist):
-#     query = f"{title} {artist} official"
-#     search_url = f"ytsearch5:{query}"  # Try 5 results instead of 1
-#     try:
-#         result = subprocess.run(
-#             ["yt-dlp", "--dump-json", search_url],
-#             stdout=subprocess.PIPE,
-#             stderr=subprocess.PIPE,
-#             text=True,
-#             timeout=30
-#         )
+def search_youtube_for_song(title, artist):
+    query = f"{title} {artist} official"
+    search_url = f"ytsearch5:{query}"  # Try 5 results instead of 1
+    try:
+        result = subprocess.run(
+            ["yt-dlp", "--dump-json", search_url],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=30
+        )
 
-#         if result.returncode == 0:
-#             # yt-dlp outputs one JSON line per video
-#             for line in result.stdout.splitlines():
-#                 try:
-#                     video_json = json.loads(line)
-#                     if not video_json.get("is_unavailable"):
-#                         video_id = video_json["id"]
-#                         debug_message(f"✅ Found video: {video_id}")#
-#                         return video_id
-#                 except json.JSONDecodeError:
-#                     continue
+        if result.returncode == 0:
+            # yt-dlp outputs one JSON line per video
+            for line in result.stdout.splitlines():
+                try:
+                    video_json = json.loads(line)
+                    if not video_json.get("is_unavailable"):
+                        video_id = video_json["id"]
+                        debug_message(f"✅ Found video: {video_id}")#
+                        return video_id
+                except json.JSONDecodeError:
+                    continue
 
-#             debug_message("⚠️ No available videos found")
-#         else:
-#             debug_message(f"❌ yt-dlp error: {result.stderr}")
-#     except Exception as e:
-#         debug_message("❌ yt-dlp exception")
-#         st.error(f"Error using yt-dlp: {e}")
+            debug_message("⚠️ No available videos found")
+        else:
+            debug_message(f"❌ yt-dlp error: {result.stderr}")
+    except Exception as e:
+        debug_message("❌ yt-dlp exception")
+        st.error(f"Error using yt-dlp: {e}")
 
-#     return None
-
-
+    return None
 
 
-# def search_youtube_for_song(title, artist):
-#     query = f"{title} {artist} official"
-#     search_url = f"ytsearch1:{query}"  # ytsearch1: returns 1 result
-#     try:
-#         result = subprocess.run(
-#             ["yt-dlp", "--dump-json", search_url],
-#             stdout=subprocess.PIPE,
-#             stderr=subprocess.PIPE,
-#             text=True,
-#             timeout=20
-#         )
-#         if result.returncode == 0:    
-#             video_json = json.loads(result.stdout.splitlines()[0])
+
+
+def search_youtube_for_song(title, artist):
+    query = f"{title} {artist} karaoke"
+    search_url = f"ytsearch1:{query}"  # ytsearch1: returns 1 result
+    try:
+        result = subprocess.run(
+            ["yt-dlp", "--dump-json", search_url],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=20
+        )
+        if result.returncode == 0:    
+            video_json = json.loads(result.stdout.splitlines()[0])
         
-#             debug_message(f"17 {video_json["id"]} , {video_json["webpage_url"]}")
+            debug_message(f"17 {video_json["id"]} , {video_json["webpage_url"]}")
         
-#             return video_json["id"]  # or video_json["webpage_url"]
-#         else:
-#             debug_message(f"error {result.stderr}")
-#             print(result.stderr)
-#     except Exception as e:
+            return video_json["id"]  # or video_json["webpage_url"]
+        else:
+            debug_message(f"error {result.stderr}")
+            print(result.stderr)
+    except Exception as e:
         
-#         debug_message("error")
+        debug_message("error")
         
-#         st.error(f"Error using yt-dlp: {e}")
+        st.error(f"Error using yt-dlp: {e}")
 
-#     return None
-
-
+    return None
 
 
-# # MAIN FUNCTION
-# def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
-#     try:
-#         # GPT SYSTEM PROMPT
-#         system_prompt = """You are a helpful assistant that suggests songs based on user prompts.
-#         For each suggestion, provide:
-#         1. The song title
-#         2. The movie/show/game it's from (if applicable)
-#         3. The artist/band name
-
-#         Return the information in this exact JSON format:
-#         [
-#             {
-#                 "title": "Song Title",
-#                 "source": "Movie/Show/Game Name",
-#                 "artist": "Artist/Band Name"
-#             }
-#         ]
-
-#         Return exactly 20 songs. Make sure the JSON is valid."""
-
-#         # Compose user prompt
-#         if exclude_songs:
-#             exclude_list = [f"{song['title']} by {song['artist']}" for song in exclude_songs]
-#             user_prompt = f"Suggest 20 songs related to: {prompt}. Please avoid these songs: {', '.join(exclude_list)}"
-#         else:
-#             user_prompt = f"Suggest 20 songs related to: {prompt}"
-
-#         # Call OpenAI
-#         api_key = get_openai_api_key()
-#         if not api_key:
-#             st.error("❌ OpenAI API key not found.")
-#             return []
-
-#         client = OpenAI(api_key=api_key)
-#         response = client.chat.completions.create(
-#             model="gpt-3.5-turbo",
-#             messages=[
-#                 {"role": "system", "content": system_prompt},
-#                 {"role": "user", "content": user_prompt}
-#             ],
-#             max_tokens=1000,
-#             temperature=0.7
-#         )
-
-#         content = response.choices[0].message.content.strip()
-#         song_data = json.loads(content)
 
 
-#         video_ids = []
-#         song_details = []
+# MAIN FUNCTION
+def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
+    try:
+        # GPT SYSTEM PROMPT
+        system_prompt = """You are a helpful assistant that suggests songs based on user prompts.
+        For each suggestion, provide:
+        1. The song title
+        2. The movie/show/game it's from (if applicable)
+        3. The artist/band name
+
+        Return the information in this exact JSON format:
+        [
+            {
+                "title": "Song Title",
+                "source": "Movie/Show/Game Name",
+                "artist": "Artist/Band Name"
+            }
+        ]
+
+        Return exactly 20 songs. Make sure the JSON is valid."""
+
+        # Compose user prompt
+        if exclude_songs:
+            exclude_list = [f"{song['title']} by {song['artist']}" for song in exclude_songs]
+            user_prompt = f"Suggest 20 songs related to: {prompt}. Please avoid these songs: {', '.join(exclude_list)}"
+        else:
+            user_prompt = f"Suggest 20 songs related to: {prompt}"
+
+        # Call OpenAI
+        api_key = get_openai_api_key()
+        if not api_key:
+            st.error("❌ OpenAI API key not found.")
+            return []
+
+        client = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=1000,
+            temperature=0.7
+        )
+
+        content = response.choices[0].message.content.strip()
+        song_data = json.loads(content)
 
 
-#         for song in song_data:
-#             title = song.get('title', '')
-#             artist = song.get('artist', '')
-#             source = song.get('source', 'Unknown Source')
-#             yt_url = search_youtube_for_song(title, artist)
+        video_ids = []
+        song_details = []
 
-#             if yt_url:
-#                 extracted_ids = extract_youtube_links(yt_url)
-#                 if extracted_ids:
-#                     video_ids.append(extracted_ids[0])
-#                     song_details.append({
-#                         'title': title,
-#                         'artist': artist,
-#                         'source': source,
-#                         'video_id': extracted_ids[0]
-#                     })
+
+        for song in song_data:
+            title = song.get('title', '')
+            artist = song.get('artist', '')
+            source = song.get('source', 'Unknown Source')
+            yt_url = search_youtube_for_song(title, artist)
+
+            if yt_url:
+                extracted_ids = extract_youtube_links(yt_url)
+                if extracted_ids:
+                    video_ids.append(extracted_ids[0])
+                    song_details.append({
+                        'title': title,
+                        'artist': artist,
+                        'source': source,
+                        'video_id': extracted_ids[0]
+                    })
 
         
 
-#         st.session_state.song_details = song_details
-#         return video_ids[:20]
+        st.session_state.song_details = song_details
+        return video_ids[:20]
 
-#     except json.JSONDecodeError:
-#         st.error("❌ Couldn't parse song list. Try again.")
-#         return []
+    except json.JSONDecodeError:
+        st.error("❌ Couldn't parse song list. Try again.")
+        return []
 
-#     except Exception as e:
-#         st.error(f"Error: {e}")
-#         return []
+    except Exception as e:
+        st.error(f"Error: {e}")
+        return []
 
 
 
