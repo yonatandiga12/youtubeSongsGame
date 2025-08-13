@@ -343,6 +343,7 @@ def search_youtube_for_song(title, artist):
         
             return video_json["id"]  # or video_json["webpage_url"]
         else:
+            debug_message(f"error {result.stderr}")
             print(result.stderr)
     except Exception as e:
         
@@ -412,9 +413,7 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
             title = song.get('title', '')
             artist = song.get('artist', '')
             source = song.get('source', 'Unknown Source')
-            debug_message("got here 1")
             yt_url = search_youtube_for_song(title, artist)
-            debug_message("got here 3")
 
             if yt_url:
                 extracted_ids = extract_youtube_links(yt_url)
