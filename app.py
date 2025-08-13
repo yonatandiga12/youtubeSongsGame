@@ -458,6 +458,9 @@ def main():
         - "video game music"
         """)
     
+        render_debug_panel()
+
+
     # Main content area
     col1, col2 = st.columns([2, 1])
     
@@ -679,12 +682,13 @@ def main():
         st.markdown('<a href="https://www.youtube.com/watch?v=' + video_id + '" target="_blank" style="background-color: #ff0000; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">▶️ Open in YouTube</a>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
-        render_debug_panel()
 
         # Close button
         if st.button("❌ Close Player"):
             del st.session_state.selected_video
             st.rerun()
+
+
 
 if __name__ == "__main__":
     main() 
