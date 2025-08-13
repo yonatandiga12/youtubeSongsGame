@@ -328,7 +328,7 @@ def search_youtube_for_song(title, artist):
     debug_message("got here 8")
     query = f"{title} {artist} vevo official"
     debug_message(f"got here 9 {query}")
-    search = VideosSearch(query, limit=1)
+    search = VideosSearch(query, limit=1, proxies=None)
     debug_message("got here 10")
     results = search.result()
     debug_message("got here 11")
