@@ -385,7 +385,6 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
         content = response.choices[0].message.content.strip()
         song_data = json.loads(content)
 
-        debug_log(content)
 
         video_ids = []
         song_details = []
@@ -406,6 +405,8 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
                         'source': source,
                         'video_id': extracted_ids[0]
                     })
+
+        debug_log("got here 1")
 
         st.session_state.song_details = song_details
         return video_ids[:20]
@@ -490,7 +491,7 @@ def main():
                 else:
                     with st.spinner("🎵 Generating your video collection..."):
                         video_ids = get_youtube_videos_with_chatgpt(prompt)
-                        
+                        debug_log("got here 2")
                         if video_ids:
                             st.success(f"🎉 Found {len(video_ids)} videos!")
                             
