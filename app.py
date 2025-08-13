@@ -305,6 +305,18 @@ def get_video_info(video_id):
 #         return []
 
 
+def debug_log(message):
+    """Add debug message to the debug panel (bottom of screen)"""
+    if "debug_messages" not in st.session_state:
+        st.session_state.debug_messages = []
+    st.session_state.debug_messages.append(str(message))
+
+def render_debug_panel():
+    """Render all debug messages at the bottom of the screen"""
+    if st.session_state.get("debug_messages"):
+        with st.expander("🛠️ Debug Output (click to expand)", expanded=False):
+            for i, msg in enumerate(st.session_state.debug_messages):
+                st.markdown(f"**{i+1}.** {msg}")
 
 
 
@@ -372,6 +384,8 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
 
         content = response.choices[0].message.content.strip()
         song_data = json.loads(content)
+
+        debug_log(content)
 
         video_ids = []
         song_details = []
@@ -665,6 +679,8 @@ def main():
         st.markdown('<a href="https://www.youtube.com/watch?v=' + video_id + '" target="_blank" style="background-color: #ff0000; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">▶️ Open in YouTube</a>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
+        render_debug_panel()
+
         # Close button
         if st.button("❌ Close Player"):
             del st.session_state.selected_video
