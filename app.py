@@ -3,6 +3,7 @@ from openai import OpenAI
 from youtubesearchpython import VideosSearch
 import json
 import re
+import subprocess
 
 
 # Configure OpenAI - only from Streamlit secrets
