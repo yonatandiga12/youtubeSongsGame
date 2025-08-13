@@ -229,7 +229,7 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
             }
         ]
         
-        Return exactly 20 songs. Make sure the JSON is valid."""
+        Return exactly 20 songs. Make sure the JSON is valid and return only the json."""
         
         # Add exclusion instruction if we have previous songs
         if exclude_songs:
@@ -288,19 +288,7 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
             
         except json.JSONDecodeError:
             st.warning("ChatGPT didn't return valid JSON. Using fallback method...")
-            # Fallback to direct YouTube search
-            search = VideosSearch(prompt, limit=20)
-            results = search.result()
-            video_ids = []
             
-            for video in results.get('result', []):
-                video_url = video.get('link', '')
-                extracted_ids = extract_youtube_links(video_url)
-                if extracted_ids:
-                    video_ids.append(extracted_ids[0])
-            
-            return video_ids[:20]
-        
     except Exception as e:
         st.error(f"Error: {e}")
         return []
