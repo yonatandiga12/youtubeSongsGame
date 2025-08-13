@@ -2,3 +2,4 @@ streamlit==1.28.1
 openai>=1.0.0
 youtube-search-python==1.6.6
 requests==2.31.0 
+yt-dlp

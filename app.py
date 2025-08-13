@@ -323,20 +323,33 @@ def extract_youtube_links(url):
     return [match.group(1)] if match else []
 
 
-# Helper: search YouTube using title and artist
+
 def search_youtube_for_song(title, artist):
-    debug_message("got here 8")
-    query = f"{title} {artist} vevo official"
-    debug_message(f"got here 9 {query}")
-    search = VideosSearch(query, limit=1, proxies=None)
-    debug_message("got here 10")
-    results = search.result()
-    debug_message("got here 11")
-    if results.get('result'):
-        debug_message("got here 12")
-        return results['result'][0].get('link')
-    debug_message("got here 13")
+    query = f"{title} {artist} official"
+    search_url = f"ytsearch1:{query}"  # ytsearch1: returns 1 result
+    debug_message("15")
+    try:
+        result = subprocess.run(
+            ["yt-dlp", "--dump-json", search_url],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=10
+        )
+        debug_message("16")
+        if result.returncode == 0:
+            debug_message("17")
+            video_json = json.loads(result.stdout.splitlines()[0])
+            return video_json["id"]  # or video_json["webpage_url"]
+        else:
+            print(result.stderr)
+    except Exception as e:
+        st.error(f"Error using yt-dlp: {e}")
+
     return None
+
+
+
 
 # MAIN FUNCTION
 def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
