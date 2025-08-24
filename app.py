@@ -84,6 +84,10 @@ if 'current_quote_index' not in st.session_state:
     st.session_state.current_quote_index = 0
 if 'quotes' not in st.session_state:
     st.session_state.quotes = []
+if 'current_frame_index' not in st.session_state:
+    st.session_state.current_frame_index = 0
+if 'movies' not in st.session_state:
+    st.session_state.movies = []
 
 
 # Extract YouTube video IDs from text
@@ -264,13 +268,89 @@ def get_movie_quotes_with_chatgpt(prompt, exclude_quotes=None):
         st.error(f"Error getting quotes: {str(e)}")
         return []
 
+# Get movie frames with ChatGPT
+def get_movie_frames_with_chatgpt(prompt, exclude_movies=None):
+    """Use ChatGPT to get movie suggestions for frame guessing"""
+    try:
+        # System prompt for movie frames
+        system_prompt = """You are a helpful assistant that suggests famous movies based on user prompts.
+        For each suggestion, provide:
+        1. The movie title
+        2. The year of the movie
+        3. A brief description of a memorable scene or frame
+        4. The genre of the movie
+
+        Return the information in this exact JSON format:
+        [
+            {
+                "title": "Movie Title",
+                "year": "Year",
+                "description": "Brief description of a memorable scene",
+                "genre": "Genre"
+            }
+        ]
+        
+        Return exactly 25 movies. Make sure the JSON is valid and return only the json."""
+
+        # Compose user prompt
+        if exclude_movies and isinstance(exclude_movies, list) and len(exclude_movies) > 0 and isinstance(exclude_movies[0], dict):
+            exclude_list = [f"{movie['title']} ({movie['year']})" for movie in exclude_movies]
+            user_prompt = f"Suggest 25 famous movies related to: {prompt}. Please avoid these movies: {', '.join(exclude_list)}"
+        else:
+            user_prompt = f"Suggest 25 famous movies related to: {prompt}"
+
+        # Get API key
+        api_key = get_openai_api_key()
+        if not api_key:
+            st.error("OpenAI API key not found in Streamlit secrets!")
+            return []
+
+        # Create OpenAI client
+        client = OpenAI(api_key=api_key)
+
+        # Make API call
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=3000,
+            temperature=0.7
+        )
+
+        # Extract response content
+        response_content = response.choices[0].message.content.strip()
+
+        # Try to extract JSON from response
+        try:
+            # Look for JSON in the response
+            json_start = response_content.find('[')
+            json_end = response_content.rfind(']') + 1
+            
+            if json_start != -1 and json_end != 0:
+                json_str = response_content[json_start:json_end]
+                movies_data = json.loads(json_str)
+            else:
+                st.error("No valid JSON found in ChatGPT response")
+                return []
+        except json.JSONDecodeError as e:
+            st.error(f"Failed to parse JSON from ChatGPT response: {e}")
+            return []
+
+        return movies_data[:25]  # Return max 25 movies
+
+    except Exception as e:
+        st.error(f"Error getting movies: {str(e)}")
+        return []
+
 # Main app
 def main():
     # Header
     st.markdown('<h1 class="main-header">🎮 Multi-Game Entertainment Hub</h1>', unsafe_allow_html=True)
     
     # Create tabs
-    tab1, tab2 = st.tabs(["🎵 Song Guessing Game", "🎬 Movie Quotes Game"])
+    tab1, tab2, tab3 = st.tabs(["🎵 Song Guessing Game", "🎬 Movie Quotes Game", "🎭 Movie Frame Game"])
     
         # Song Guessing Game Tab
     with tab1:
@@ -446,6 +526,93 @@ def main():
         st.markdown("1. Enter a theme or prompt")
         st.markdown("2. Click 'Generate Quotes' to get 25 movie quotes")
         st.markdown("3. Read the quote and guess the movie/character")
+        st.markdown("4. Click 'Reveal' to see the answer")
+        st.markdown("5. Use Previous/Next to navigate")
+    
+    # Movie Frame Game Tab
+    with tab3:
+        st.markdown('<h2 class="sub-header">🎭 Movie Frame Game</h2>', unsafe_allow_html=True)
+        
+        # Prompt input for movie frames
+        frame_prompt = st.text_input(
+            "Enter a theme or prompt:",
+            placeholder="e.g., 'action movies', 'Disney films', 'sci-fi classics'",
+            key="frame_prompt"
+        )
+        
+        # Generate button for movie frames
+        if st.button("Generate Movies", key="generate_frames"):
+            if frame_prompt:
+                with st.spinner("Generating movie suggestions..."):
+                    movies = get_movie_frames_with_chatgpt(frame_prompt, None)
+                    if movies:
+                        st.session_state.movies = movies
+                        st.session_state.current_frame_index = 0
+                        st.success(f"Generated {len(movies)} movie suggestions!")
+                    else:
+                        st.error("No movies found. Try a different prompt.")
+            else:
+                st.warning("Please enter a prompt first.")
+        
+        # Navigation controls for movie frames
+        if st.session_state.movies:
+            st.subheader("Navigation")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                if st.button("⏮️ Previous", key="prev_frame"):
+                    if st.session_state.current_frame_index > 0:
+                        st.session_state.current_frame_index -= 1
+                        st.rerun()
+            
+            with col2:
+                if st.button("⏭️ Next", key="next_frame"):
+                    if st.session_state.current_frame_index < len(st.session_state.movies) - 1:
+                        st.session_state.current_frame_index += 1
+                        st.rerun()
+            
+            with col3:
+                if st.button("🎯 Reveal", key="reveal_frame"):
+                    st.rerun()
+            
+            # Progress indicator
+            st.progress(st.session_state.current_frame_index / (len(st.session_state.movies) - 1))
+            st.caption(f"Movie {st.session_state.current_frame_index + 1} of {len(st.session_state.movies)}")
+        
+        # Main content area for movie frame game
+        if st.session_state.movies:
+            current_index = st.session_state.current_frame_index
+            current_movie = st.session_state.movies[current_index]
+            
+            # Display movie frame placeholder
+            st.subheader("🎭 Look and Guess!")
+            
+            # Placeholder for movie frame (since we can't get actual frames from ChatGPT)
+            st.markdown('<div class="quote-box">', unsafe_allow_html=True)
+            st.write(f"**Scene Description:**")
+            st.write(f'"{current_movie["description"]}"')
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Additional movie hints
+            st.info(f"💡 **Hint:** This is a {current_movie.get('genre', 'Unknown')} movie from {current_movie.get('year', 'Unknown')}")
+            
+            # Reveal button functionality
+            if st.button("🎯 Reveal Answer", key="reveal_answer_frame"):
+                st.markdown('<div class="answer-box">', unsafe_allow_html=True)
+                st.write("**Movie Information:**")
+                st.write(f"Title: {current_movie.get('title', 'Unknown')}")
+                st.write(f"Year: {current_movie.get('year', 'Unknown')}")
+                st.write(f"Genre: {current_movie.get('genre', 'Unknown')}")
+                st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.info("👆 Enter a prompt and click 'Generate Movies' to start playing!")
+        
+        # Instructions for movie frames
+        st.markdown("---")
+        st.markdown("### How to Play:")
+        st.markdown("1. Enter a theme or prompt")
+        st.markdown("2. Click 'Generate Movies' to get 25 movie suggestions")
+        st.markdown("3. Read the scene description and guess the movie")
         st.markdown("4. Click 'Reveal' to see the answer")
         st.markdown("5. Use Previous/Next to navigate")
 
