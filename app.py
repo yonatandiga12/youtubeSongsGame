@@ -84,6 +84,8 @@ if 'current_quote_index' not in st.session_state:
     st.session_state.current_quote_index = 0
 if 'quotes' not in st.session_state:
     st.session_state.quotes = []
+if 'debug_mode' not in st.session_state:
+    st.session_state.debug_mode = False
 
 # Debug function
 def debug_message(message):
@@ -346,8 +348,7 @@ def main():
             st.markdown("5. Use Previous/Next to navigate")
             
             # Debug mode toggle
-            debug_mode = st.checkbox("Debug Mode", key="debug_mode")
-            st.session_state.debug_mode = debug_mode
+            st.session_state.debug_mode = st.checkbox("Debug Mode", value=st.session_state.debug_mode)
         
         # Main content area for song game
         if st.session_state.videos:
