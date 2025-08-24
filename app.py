@@ -171,7 +171,7 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
                 return []
         except json.JSONDecodeError as e:
             st.error(f"Failed to parse JSON from ChatGPT response: {e}")
-        return []
+            return []
 
         # Extract video IDs from links
         video_ids = []
