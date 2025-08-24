@@ -88,6 +88,8 @@ if 'current_frame_index' not in st.session_state:
     st.session_state.current_frame_index = 0
 if 'movies' not in st.session_state:
     st.session_state.movies = []
+if 'hint_level' not in st.session_state:
+    st.session_state.hint_level = 0
 
 
 # Extract YouTube video IDs from text
@@ -277,15 +279,17 @@ def get_movie_frames_with_chatgpt(prompt, exclude_movies=None):
         For each suggestion, provide:
         1. The movie title
         2. The year of the movie
-        3. A brief description of a memorable scene or frame
+        3. A brief description of a memorable scene or frame (with character names)
         4. The genre of the movie
+        5. An anonymized version of the scene description (replace character names with "Person A", "Person B", etc.)
 
         Return the information in this exact JSON format:
         [
             {
                 "title": "Movie Title",
                 "year": "Year",
-                "description": "Brief description of a memorable scene",
+                "description": "Brief description of a memorable scene with character names",
+                "anonymized_description": "Same scene but with Person A, Person B, etc. instead of names",
                 "genre": "Genre"
             }
         ]
@@ -548,6 +552,7 @@ def main():
                     if movies:
                         st.session_state.movies = movies
                         st.session_state.current_frame_index = 0
+                        st.session_state.hint_level = 0  # Reset hint level
                         st.success(f"Generated {len(movies)} movie suggestions!")
                     else:
                         st.error("No movies found. Try a different prompt.")
@@ -563,12 +568,14 @@ def main():
                 if st.button("⏮️ Previous", key="prev_frame"):
                     if st.session_state.current_frame_index > 0:
                         st.session_state.current_frame_index -= 1
+                        st.session_state.hint_level = 0  # Reset hint level
                         st.rerun()
             
             with col2:
                 if st.button("⏭️ Next", key="next_frame"):
                     if st.session_state.current_frame_index < len(st.session_state.movies) - 1:
                         st.session_state.current_frame_index += 1
+                        st.session_state.hint_level = 0  # Reset hint level
                         st.rerun()
             
             with col3:
@@ -587,23 +594,49 @@ def main():
             # Display movie frame placeholder
             st.subheader("🎭 Look and Guess!")
             
-            # Placeholder for movie frame (since we can't get actual frames from ChatGPT)
+            # Show scene description based on hint level
             st.markdown('<div class="quote-box">', unsafe_allow_html=True)
             st.write(f"**Scene Description:**")
-            st.write(f'"{current_movie["description"]}"')
+            
+            if st.session_state.hint_level == 0:
+                # Level 0: Anonymized description (Person A, Person B, etc.)
+                description = current_movie.get('anonymized_description', current_movie.get('description', 'No description available'))
+                st.write(f'"{description}"')
+            else:
+                # Level 1+: Full description with character names
+                description = current_movie.get('description', 'No description available')
+                st.write(f'"{description}"')
+            
             st.markdown('</div>', unsafe_allow_html=True)
             
-            # Additional movie hints
-            st.info(f"💡 **Hint:** This is a {current_movie.get('genre', 'Unknown')} movie from {current_movie.get('year', 'Unknown')}")
+            # Hint buttons with different levels
+            col1, col2, col3 = st.columns(3)
             
-            # Reveal button functionality
-            if st.button("🎯 Reveal Answer", key="reveal_answer_frame"):
-                st.markdown('<div class="answer-box">', unsafe_allow_html=True)
-                st.write("**Movie Information:**")
-                st.write(f"Title: {current_movie.get('title', 'Unknown')}")
-                st.write(f"Year: {current_movie.get('year', 'Unknown')}")
-                st.write(f"Genre: {current_movie.get('genre', 'Unknown')}")
-                st.markdown('</div>', unsafe_allow_html=True)
+            with col1:
+                if st.button("💡 Hint 1: Show Names", key="hint1_frame"):
+                    st.session_state.hint_level = 1
+                    st.rerun()
+            
+            with col2:
+                if st.button("💡 Hint 2: Year & Genre", key="hint2_frame"):
+                    st.session_state.hint_level = 2
+                    st.rerun()
+            
+            with col3:
+                if st.button("🎯 Reveal Answer", key="reveal_answer_frame"):
+                    st.markdown('<div class="answer-box">', unsafe_allow_html=True)
+                    st.write("**Movie Information:**")
+                    st.write(f"Title: {current_movie.get('title', 'Unknown')}")
+                    st.write(f"Year: {current_movie.get('year', 'Unknown')}")
+                    st.write(f"Genre: {current_movie.get('genre', 'Unknown')}")
+                    st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Show hints based on level
+            if st.session_state.hint_level >= 1:
+                st.info(f"💡 **Hint 1:** Character names are now shown in the description above!")
+            
+            if st.session_state.hint_level >= 2:
+                st.info(f"💡 **Hint 2:** This is a {current_movie.get('genre', 'Unknown')} movie from {current_movie.get('year', 'Unknown')}")
         else:
             st.info("👆 Enter a prompt and click 'Generate Movies' to start playing!")
         
