@@ -402,15 +402,6 @@ def main():
             st.progress(st.session_state.current_quote_index / (len(st.session_state.quotes) - 1))
             st.caption(f"Quote {st.session_state.current_quote_index + 1} of {len(st.session_state.quotes)}")
         
-        # Instructions for quotes
-        st.markdown("---")
-        st.markdown("### How to Play:")
-        st.markdown("1. Enter a theme or prompt")
-        st.markdown("2. Click 'Generate Quotes' to get 25 movie quotes")
-        st.markdown("3. Read the quote and guess the movie/character")
-        st.markdown("4. Click 'Reveal' to see the answer")
-        st.markdown("5. Use Previous/Next to navigate")
-        
         # Main content area for movie quotes game
         if st.session_state.quotes:
             current_index = st.session_state.current_quote_index
@@ -432,6 +423,15 @@ def main():
                 st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.info("👆 Enter a prompt in the sidebar and click 'Generate Quotes' to start playing!")
+        
+        # Instructions for quotes
+        st.markdown("---")
+        st.markdown("### How to Play:")
+        st.markdown("1. Enter a theme or prompt")
+        st.markdown("2. Click 'Generate Quotes' to get 25 movie quotes")
+        st.markdown("3. Read the quote and guess the movie/character")
+        st.markdown("4. Click 'Reveal' to see the answer")
+        st.markdown("5. Use Previous/Next to navigate")
 
 if __name__ == "__main__":
     main() 
