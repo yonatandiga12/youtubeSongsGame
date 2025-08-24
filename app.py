@@ -13,8 +13,8 @@ def get_openai_api_key():
 
 # Page configuration
 st.set_page_config(
-    page_title="YouTube Video Game",
-    page_icon="🎵",
+    page_title="Multi-Game Entertainment Hub",
+    page_icon="🎮",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -32,28 +32,65 @@ st.markdown("""
     .sub-header {
         font-size: 1.5rem;
         color: #4ECDC4;
+        text-align: center;
         margin-bottom: 1rem;
     }
-    .video-card {
-        border: 2px solid #ddd;
-        border-radius: 10px;
-        padding: 1rem;
+    .quote-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 15px;
+        color: white;
+        font-size: 1.2rem;
+        font-style: italic;
+        text-align: center;
         margin: 1rem 0;
-        background-color: #f8f9fa;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
     }
-    .prompt-input {
-        background-color: #f0f2f6;
+    .answer-box {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        padding: 1.5rem;
         border-radius: 10px;
-        padding: 1rem;
+        color: white;
+        font-size: 1.1rem;
+        text-align: center;
         margin: 1rem 0;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 0.5rem 2rem;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+    .sidebar .sidebar-content {
+        background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
     }
 </style>
 """, unsafe_allow_html=True)
 
+# Initialize session state
+if 'current_video_index' not in st.session_state:
+    st.session_state.current_video_index = 0
+if 'videos' not in st.session_state:
+    st.session_state.videos = []
+if 'current_quote_index' not in st.session_state:
+    st.session_state.current_quote_index = 0
+if 'quotes' not in st.session_state:
+    st.session_state.quotes = []
 
+# Debug function
+def debug_message(message):
+    if st.session_state.get('debug_mode', False):
+        st.write(f"DEBUG: {message}")
 
-
-
+# Extract YouTube video IDs from text
 def extract_youtube_links(text):
     """Extract YouTube video IDs from text using regex"""
     # Pattern to match YouTube URLs
@@ -70,42 +107,9 @@ def extract_youtube_links(text):
     
     return list(set(video_ids))  # Remove duplicates
 
-
-def get_video_info(video_id):
-    """Get basic video information and check availability"""
-    try:
-        # Use a simpler approach to avoid the proxies issue
-        import requests
-        
-        # Get video info from YouTube oEmbed API
-        oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
-        response = requests.get(oembed_url, timeout=5)
-        
-        if response.status_code == 200:
-            data = response.json()
-            return {
-                'title': data.get('title', 'Unknown Title'),
-                'video_id': video_id,
-                'available': True
-            }
-        else:
-            return {
-                'title': f'Video {video_id[:8]}...',
-                'video_id': video_id,
-                'available': False
-            }
-    except Exception as e:
-        # If oEmbed fails, video might not be available
-        return {
-            'title': f'Video {video_id[:8]}...',
-            'video_id': video_id,
-            'available': False
-        }
-
-
-
+# Get YouTube videos with ChatGPT
 def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
-    """Use ChatGPT to get song suggestions with YouTube links"""
+    """Use ChatGPT to get song suggestions, then search YouTube for those songs"""
     try:
         # First, use ChatGPT to suggest songs based on the prompt
         system_prompt = """You are a helpful assistant that suggests songs based on user prompts.
@@ -126,23 +130,24 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
         ]
         
         Return exactly 25 songs. Make sure the JSON is valid and return only the json."""
-        
-        # Add exclusion instruction if we have previous songs
+
+        # Compose user prompt
         if exclude_songs:
             exclude_list = [f"{song['title']} by {song['artist']}" for song in exclude_songs]
             user_prompt = f"Suggest 25 songs related to: {prompt}. Please avoid these songs: {', '.join(exclude_list)}"
         else:
             user_prompt = f"Suggest 25 songs related to: {prompt}"
-        
-        from openai import OpenAI
-        
-        # Get API key from Streamlit secrets
+
+        # Get API key
         api_key = get_openai_api_key()
         if not api_key:
-            st.error("❌ OpenAI API key not found in Streamlit Cloud secrets!")
+            st.error("OpenAI API key not found in Streamlit secrets!")
             return []
-            
+
+        # Create OpenAI client
         client = OpenAI(api_key=api_key)
+
+        # Make API call
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -152,344 +157,301 @@ def get_youtube_videos_with_chatgpt(prompt, exclude_songs=None):
             max_tokens=3000,
             temperature=0.7
         )
-        
-        content = response.choices[0].message.content.strip()
-        
-        debug_message(content)
-        # Try to parse JSON response
+
+        # Extract response content
+        response_content = response.choices[0].message.content.strip()
+        debug_message(f"ChatGPT Response: {response_content}")
+
+        # Try to extract JSON from response
         try:
-            import json
-            song_data = json.loads(content)
-            video_ids = []
-            song_details = []
+            # Look for JSON in the response
+            json_start = response_content.find('[')
+            json_end = response_content.rfind(']') + 1
             
-            # Process each song suggested by GPT
-            for song_info in song_data:
-                # Extract video ID from the link provided by GPT
-                video_link = song_info.get('link', '')
-                extracted_ids = extract_youtube_links(video_link)
-                
-                if extracted_ids:
-                    video_ids.append(extracted_ids[0])
-                    song_details.append({
-                        'title': song_info.get('title', 'Unknown Title'),
-                        'source': song_info.get('source', 'Unknown Source'),
-                        'artist': song_info.get('artist', 'Unknown Artist'),
-                        'video_id': extracted_ids[0]
-                    })
-            
-            # Store song details in session state
-            st.session_state.song_details = song_details
-            
-            return video_ids[:25]  # Return max 25 videos
-            
-        except json.JSONDecodeError:
-            st.warning("ChatGPT didn't return valid JSON. Using fallback method...")
-            
+            if json_start != -1 and json_end != 0:
+                json_str = response_content[json_start:json_end]
+                songs_data = json.loads(json_str)
+            else:
+                st.error("No valid JSON found in ChatGPT response")
+                return []
+        except json.JSONDecodeError as e:
+            st.error(f"Failed to parse JSON from ChatGPT response: {e}")
+            debug_message(f"Raw response: {response_content}")
+            return []
+
+        # Extract video IDs from links
+        video_ids = []
+        for song in songs_data:
+            if 'link' in song and song['link']:
+                ids = extract_youtube_links(song['link'])
+                if ids:
+                    video_ids.extend(ids)
+                    song['video_id'] = ids[0]  # Store the video ID
+                    debug_message(f"Extracted video ID: {ids[0]} from {song['title']}")
+
+        debug_message(f"Total video IDs extracted: {len(video_ids)}")
+        return video_ids[:25]  # Return max 25 videos
+
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Error getting videos: {str(e)}")
         return []
 
+# Get movie quotes with ChatGPT
+def get_movie_quotes_with_chatgpt(prompt, exclude_quotes=None):
+    """Use ChatGPT to get movie quote suggestions"""
+    try:
+        # System prompt for movie quotes
+        system_prompt = """You are a helpful assistant that suggests famous movie quotes based on user prompts.
+        For each suggestion, provide:
+        1. The quote text
+        2. The movie/show it's from
+        3. The character who said it (if known)
+        4. The year of the movie/show (if known)
 
-#
-def debug_message(message: str):
-    st.markdown(
-        f"""
-        <div style="background-color:#ffe8cc; padding:10px; border-radius:5px; border-left: 4px solid #ffa94d; margin-top:20px;">
-            <strong>🛠 Debug:</strong> {message}
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+        Return the information in this exact JSON format:
+        [
+            {
+                "quote": "The actual quote text here",
+                "movie": "Movie/Show Name",
+                "character": "Character Name",
+                "year": "Year"
+            }
+        ]
+        
+        Return exactly 25 quotes. Make sure the JSON is valid and return only the json."""
 
+        # Compose user prompt
+        if exclude_quotes:
+            exclude_list = [f"{quote['quote'][:50]}..." for quote in exclude_quotes]
+            user_prompt = f"Suggest 25 famous movie quotes related to: {prompt}. Please avoid these quotes: {', '.join(exclude_list)}"
+        else:
+            user_prompt = f"Suggest 25 famous movie quotes related to: {prompt}"
 
-# Helper: extract video ID from YouTube URL (simplified version)
-def extract_youtube_links(url):
-    import re
-    match = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", url)
-    return [match.group(1)] if match else []
+        # Get API key
+        api_key = get_openai_api_key()
+        if not api_key:
+            st.error("OpenAI API key not found in Streamlit secrets!")
+            return []
 
+        # Create OpenAI client
+        client = OpenAI(api_key=api_key)
 
+        # Make API call
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=3000,
+            temperature=0.7
+        )
 
+        # Extract response content
+        response_content = response.choices[0].message.content.strip()
+        debug_message(f"ChatGPT Response: {response_content}")
 
+        # Try to extract JSON from response
+        try:
+            # Look for JSON in the response
+            json_start = response_content.find('[')
+            json_end = response_content.rfind(']') + 1
+            
+            if json_start != -1 and json_end != 0:
+                json_str = response_content[json_start:json_end]
+                quotes_data = json.loads(json_str)
+            else:
+                st.error("No valid JSON found in ChatGPT response")
+                return []
+        except json.JSONDecodeError as e:
+            st.error(f"Failed to parse JSON from ChatGPT response: {e}")
+            debug_message(f"Raw response: {response_content}")
+            return []
 
+        return quotes_data[:25]  # Return max 25 quotes
 
+    except Exception as e:
+        st.error(f"Error getting quotes: {str(e)}")
+        return []
 
-
-
-
-
-
-
-
-
-
-
-
-
+# Main app
 def main():
-    # Main header
-    st.markdown('<h1 class="main-header">🎵 YouTube Video Game 🎵</h1>', unsafe_allow_html=True)
+    # Header
+    st.markdown('<h1 class="main-header">🎮 Multi-Game Entertainment Hub</h1>', unsafe_allow_html=True)
     
-    # Sidebar for configuration
-    with st.sidebar:
-        #st.markdown("### ⚙️ Configuration")
+    # Create tabs
+    tab1, tab2 = st.tabs(["🎵 Song Guessing Game", "🎬 Movie Quotes Game"])
+    
+    # Song Guessing Game Tab
+    with tab1:
+        st.markdown('<h2 class="sub-header">🎵 Song Guessing Game</h2>', unsafe_allow_html=True)
         
-
-        st.markdown("### 🎮 How to Play")
-        st.markdown("""
-        1. Enter a prompt describing the type of songs you want
-        2. Click 'Generate Videos' to get 25 song links
-        3. Click on any song button to play it
-        4. Listen and try to guess what song it is and where it's from!
-        """)
-        
-        st.markdown("---")
-        st.markdown("### 💡 Example Prompts")
-        st.markdown("""
-        - "songs from movies"
-        - "80s pop hits"
-        - "classic rock songs"
-        - "disney movie songs"
-        - "video game music"
-        """)
-    
-
-    # Main content area
-    col1, col2 = st.columns([2, 1])
-    
-    
-    
-    with col1:
-        st.markdown('<h2 class="sub-header">🎯 Enter Your Video Prompt</h2>', unsafe_allow_html=True)
-        
-        # Prompt input
-        with st.container():
-            st.markdown('<div class="prompt-input">', unsafe_allow_html=True)
+        # Sidebar for song game
+        with st.sidebar:
+            st.header("🎵 Song Game Settings")
+            
+            # Prompt input
             prompt = st.text_input(
-                "What kind of videos are you looking for?",
-                placeholder="e.g., songs from movies, funny cat videos, cooking tutorials...",
-                key="prompt_input"
+                "Enter a theme or prompt:",
+                placeholder="e.g., 'songs about love', 'Disney songs', '80s rock'",
+                key="song_prompt"
             )
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Generate button
-        col1, col2 = st.columns([2, 1])
-        
-        with col1:
-            if st.button("🎲 Generate Videos", type="primary", use_container_width=True):
-                if not prompt:
-                    st.warning("Please enter a prompt first!")
-                elif not get_openai_api_key():
-                    st.error("❌ OpenAI API key not found!")
-                    st.info("Please add your API key in Streamlit Cloud Settings → Secrets")
-                else:
-                    with st.spinner("🎵 Generating your video collection..."):
-                        video_ids = get_youtube_videos_with_chatgpt(prompt)
-                        debug_message(video_ids)
-                        if video_ids:
-                            st.success(f"🎉 Found {len(video_ids)} videos!")
-                            
-                            # Store videos in session state
-                            st.session_state.videos = []
-                            st.session_state.current_song_index = 0
-                            
-                            # Initialize persistent song list
-                            st.session_state.all_song_details = []
-                            
-                            # Reset revealed song state
-                            if 'revealed_song' in st.session_state:
-                                del st.session_state.revealed_song
-                            
-                            for video_id in video_ids:
-                                video_info = get_video_info(video_id)
-                                st.session_state.videos.append(video_info)
+            
+            # Generate button
+            if st.button("Generate Videos", key="generate_songs"):
+                if prompt:
+                    with st.spinner("Generating song suggestions..."):
+                        videos = get_youtube_videos_with_chatgpt(prompt, st.session_state.get('videos', []))
+                        if videos:
+                            st.session_state.videos = videos
+                            st.session_state.current_video_index = 0
+                            st.success(f"Generated {len(videos)} song videos!")
                         else:
-                            st.error("❌ No videos found. Please try a different prompt.")
-        
-        with col2:
-            if st.button("🔄 New Songs", use_container_width=True):
-                if not prompt:
-                    st.warning("Please enter a prompt first!")
-                elif not get_openai_api_key():
-                    st.error("❌ OpenAI API key not found!")
-                    st.info("Please add your API key in Streamlit Cloud Settings → Secrets")
+                            st.error("No videos found. Try a different prompt.")
                 else:
-                    with st.spinner("🎵 Generating new songs..."):
-                        # Get ALL existing songs to exclude them (persistent across multiple presses)
-                        all_existing_songs = []
-                        if 'all_song_details' in st.session_state:
-                            all_existing_songs.extend(st.session_state.all_song_details)
-                        if 'song_details' in st.session_state:
-                            all_existing_songs.extend(st.session_state.song_details)
-                        
-                        video_ids = get_youtube_videos_with_chatgpt(prompt, all_existing_songs)
-                        
-                        if video_ids:
-                            st.success(f"🎉 Found {len(video_ids)} new songs!")
-                            
-                            # Store videos in session state
-                            st.session_state.videos = []
-                            st.session_state.current_song_index = 0
-                            
-                            # Move current songs to all_song_details for persistence
-                            if 'song_details' in st.session_state:
-                                if 'all_song_details' not in st.session_state:
-                                    st.session_state.all_song_details = []
-                                st.session_state.all_song_details.extend(st.session_state.song_details)
-                            
-                            # Reset revealed song state
-                            if 'revealed_song' in st.session_state:
-                                del st.session_state.revealed_song
-                            
-                            for video_id in video_ids:
-                                video_info = get_video_info(video_id)
-                                st.session_state.videos.append(video_info)
+                    st.warning("Please enter a prompt first.")
+            
+            # Navigation controls
+            if st.session_state.videos:
+                st.subheader("Navigation")
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    if st.button("⏮️ Previous", key="prev_song"):
+                        if st.session_state.current_video_index > 0:
+                            st.session_state.current_video_index -= 1
+                            st.rerun()
+                
+                with col2:
+                    if st.button("⏭️ Next", key="next_song"):
+                        if st.session_state.current_video_index < len(st.session_state.videos) - 1:
+                            st.session_state.current_video_index += 1
+                            st.rerun()
+                
+                with col3:
+                    if st.button("🎯 Reveal", key="reveal_song"):
+                        st.rerun()
+                
+                # Progress indicator
+                st.progress(st.session_state.current_video_index / (len(st.session_state.videos) - 1))
+                st.caption(f"Video {st.session_state.current_video_index + 1} of {len(st.session_state.videos)}")
+            
+            # Instructions
+            st.markdown("---")
+            st.markdown("### How to Play:")
+            st.markdown("1. Enter a theme or prompt")
+            st.markdown("2. Click 'Generate Videos' to get 25 song links")
+            st.markdown("3. Listen to the song and guess the title/artist")
+            st.markdown("4. Click 'Reveal' to see the answer")
+            st.markdown("5. Use Previous/Next to navigate")
+            
+            # Debug mode toggle
+            debug_mode = st.checkbox("Debug Mode", key="debug_mode")
+            st.session_state.debug_mode = debug_mode
+        
+        # Main content area for song game
+        if st.session_state.videos:
+            current_index = st.session_state.current_video_index
+            current_video_id = st.session_state.videos[current_index]
+            
+            # Display video
+            st.subheader("🎵 Listen and Guess!")
+            st.video(f"https://www.youtube.com/watch?v={current_video_id}")
+            
+            # Reveal button functionality
+            if st.button("🎯 Reveal Answer", key="reveal_answer_song"):
+                st.markdown('<div class="answer-box">', unsafe_allow_html=True)
+                st.write("**Song Information:**")
+                st.write(f"Title: {current_video_id}")  # You might want to store more info
+                st.write("Artist: [To be implemented]")
+                st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.info("👆 Enter a prompt in the sidebar and click 'Generate Videos' to start playing!")
+    
+    # Movie Quotes Game Tab
+    with tab2:
+        st.markdown('<h2 class="sub-header">🎬 Movie Quotes Game</h2>', unsafe_allow_html=True)
+        
+        # Sidebar for movie quotes game
+        with st.sidebar:
+            st.header("🎬 Movie Quotes Settings")
+            
+            # Prompt input for quotes
+            quote_prompt = st.text_input(
+                "Enter a theme or prompt:",
+                placeholder="e.g., 'action movies', 'Disney quotes', 'sci-fi films'",
+                key="quote_prompt"
+            )
+            
+            # Generate button for quotes
+            if st.button("Generate Quotes", key="generate_quotes"):
+                if quote_prompt:
+                    with st.spinner("Generating movie quotes..."):
+                        quotes = get_movie_quotes_with_chatgpt(quote_prompt, st.session_state.get('quotes', []))
+                        if quotes:
+                            st.session_state.quotes = quotes
+                            st.session_state.current_quote_index = 0
+                            st.success(f"Generated {len(quotes)} movie quotes!")
                         else:
-                            st.error("❌ No songs found. Please try a different prompt.")
-    
-
-    # Display single song for guessing game
-    if 'videos' in st.session_state and st.session_state.videos:
-        st.markdown('<h2 class="sub-header" style="text-align: center;">🎵 Song Guessing Game</h2>', unsafe_allow_html=True)
-        st.markdown('<div style="text-align: center;"><strong>Listen to each song and try to guess what it is and where it\'s from!</strong></div>', unsafe_allow_html=True)
-        
-        # Get current song index
-        current_index = st.session_state.get('current_song_index', 0)
-        total_songs = len(st.session_state.videos)
-        
-        if current_index < total_songs:
-            current_video = st.session_state.videos[current_index]
+                            st.error("No quotes found. Try a different prompt.")
+                else:
+                    st.warning("Please enter a prompt first.")
             
-            # Song counter
-            st.markdown(f'<div style="text-align: center;"><strong>Song {current_index + 1} of {total_songs}</strong></div>', unsafe_allow_html=True)
-            
-            # Check video availability
-            if not current_video.get('available', True):
-                st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-                st.warning("⚠️ This video may not be available. Skip to the next song...")
-                st.markdown('</div>', unsafe_allow_html=True)
-            
-
-            
-            # Play and reveal buttons - centered
-            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-            col1, col2, col3 = st.columns([1, 1, 1])
-            
-            with col1:
-                if st.button("🔍 Reveal Song", key="reveal_current", use_container_width=True):
-                    st.session_state.revealed_song = current_index
-            
-            with col2:
-                if st.button("⏭️ Next Song", key="next_song", use_container_width=True):
-                    if current_index < total_songs - 1:
-                        st.session_state.current_song_index = current_index + 1
-                        st.session_state.selected_video = st.session_state.videos[current_index + 1]['video_id']
-                        st.session_state.current_song_number = current_index + 2
-                        st.session_state.auto_play = True
+            # Navigation controls for quotes
+            if st.session_state.quotes:
+                st.subheader("Navigation")
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    if st.button("⏮️ Previous", key="prev_quote"):
+                        if st.session_state.current_quote_index > 0:
+                            st.session_state.current_quote_index -= 1
+                            st.rerun()
+                
+                with col2:
+                    if st.button("⏭️ Next", key="next_quote"):
+                        if st.session_state.current_quote_index < len(st.session_state.quotes) - 1:
+                            st.session_state.current_quote_index += 1
+                            st.rerun()
+                
+                with col3:
+                    if st.button("🎯 Reveal", key="reveal_quote"):
                         st.rerun()
+                
+                # Progress indicator
+                st.progress(st.session_state.current_quote_index / (len(st.session_state.quotes) - 1))
+                st.caption(f"Quote {st.session_state.current_quote_index + 1} of {len(st.session_state.quotes)}")
             
-            with col3:
-                if st.button("⏮️ Previous Song", key="prev_song", use_container_width=True):
-                    if current_index > 0:
-                        st.session_state.current_song_index = current_index - 1
-                        st.session_state.selected_video = st.session_state.videos[current_index - 1]['video_id']
-                        st.session_state.current_song_number = current_index
-                        st.session_state.auto_play = True
-                        st.rerun()
+            # Instructions for quotes
+            st.markdown("---")
+            st.markdown("### How to Play:")
+            st.markdown("1. Enter a theme or prompt")
+            st.markdown("2. Click 'Generate Quotes' to get 25 movie quotes")
+            st.markdown("3. Read the quote and guess the movie/character")
+            st.markdown("4. Click 'Reveal' to see the answer")
+            st.markdown("5. Use Previous/Next to navigate")
+        
+        # Main content area for movie quotes game
+        if st.session_state.quotes:
+            current_index = st.session_state.current_quote_index
+            current_quote = st.session_state.quotes[current_index]
+            
+            # Display quote
+            st.subheader("🎬 Read and Guess!")
+            st.markdown('<div class="quote-box">', unsafe_allow_html=True)
+            st.write(f'"{current_quote["quote"]}"')
             st.markdown('</div>', unsafe_allow_html=True)
             
-            # Show revealed song details
-            if st.session_state.get('revealed_song') == current_index and 'song_details' in st.session_state:
-                if current_index < len(st.session_state.song_details):
-                    song_info = st.session_state.song_details[current_index]
-                    st.markdown(f"""
-                    <div style="text-align: center;">
-                    <strong>🎵 {song_info['title']}</strong><br>
-                    <strong>🎬 From:</strong> {song_info['source']}<br>
-                    <strong>👤 Artist:</strong> {song_info['artist']}
-                    </div>
-                    """, unsafe_allow_html=True)
-            
-            # Play button for manual control - centered
-            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-            if st.button("▶️ Play Song", key="play_current", use_container_width=True):
-                st.session_state.selected_video = current_video['video_id']
-                st.session_state.current_song_number = current_index + 1
-                st.session_state.auto_play = True
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Add extensive spacing to move video player much lower
-    st.markdown("<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
-    
-    # Video player
-    if 'selected_video' in st.session_state:
-        song_number = st.session_state.get('current_song_number', '?')
-        st.markdown(f'<h2 class="sub-header" style="text-align: center;">🎵 Now Playing: Song #{song_number}</h2>', unsafe_allow_html=True)
-        
-        # Check if current video is available
-        current_index = st.session_state.get('current_song_index', 0)
-        if 'videos' in st.session_state and current_index < len(st.session_state.videos):
-            current_video = st.session_state.videos[current_index]
-            if not current_video.get('available', True):
-                st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-                st.warning("⚠️ This video may not be available. If it doesn't play, try the alternative link below.")
+            # Reveal button functionality
+            if st.button("🎯 Reveal Answer", key="reveal_answer_quote"):
+                st.markdown('<div class="answer-box">', unsafe_allow_html=True)
+                st.write("**Movie Information:**")
+                st.write(f"Movie: {current_quote.get('movie', 'Unknown')}")
+                st.write(f"Character: {current_quote.get('character', 'Unknown')}")
+                st.write(f"Year: {current_quote.get('year', 'Unknown')}")
                 st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Create YouTube embed URL with autoplay
-        video_id = st.session_state.selected_video
-        autoplay_param = "&autoplay=1" if st.session_state.get('auto_play', False) else ""
-        embed_url = f"https://www.youtube.com/embed/{video_id}?rel=0&modestbranding=1{autoplay_param}"
-        
-        # Reset autoplay flag
-        st.session_state.auto_play = False
-        
-        # Display video using iframe
-        st.markdown(f"""
-        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            <iframe 
-                src="{embed_url}" 
-                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; border-radius: 10px;" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen>
-            </iframe>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Alternative: Direct link - more prominent
-        st.markdown("---")
-        
-        # Try next song button
-        st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-        if st.button("🔄 Try Next Song", key="try_next", use_container_width=True):
-            if current_index < total_songs - 1:
-                st.session_state.current_song_index = current_index + 1
-                st.session_state.selected_video = st.session_state.videos[current_index + 1]['video_id']
-                st.session_state.current_song_number = current_index + 2
-                st.session_state.auto_play = True
-                st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # YouTube link section
-        st.markdown('<div style="text-align: center; padding: 20px; background-color: #f0f2f6; border-radius: 10px; margin: 20px 0;">', unsafe_allow_html=True)
-        st.markdown('<h3 style="color: #ff6b6b;">🎬 Open in YouTube</h3>', unsafe_allow_html=True)
-        st.markdown('<p><strong>If the video doesn\'t play, try opening it directly on YouTube:</strong></p>', unsafe_allow_html=True)
-        st.markdown('<a href="https://www.youtube.com/watch?v=' + video_id + '" target="_blank" style="background-color: #ff0000; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">▶️ Open in YouTube</a>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-
-        # Close button
-        if st.button("❌ Close Player"):
-            del st.session_state.selected_video
-            st.rerun()
-
-
+        else:
+            st.info("👆 Enter a prompt in the sidebar and click 'Generate Quotes' to start playing!")
 
 if __name__ == "__main__":
-    main() 
-
-###########################################################################################################################################################
-###########################################################################################################################################################
-###########################################################################################################################################################
-###########################################################################################################################################################
+    main()
