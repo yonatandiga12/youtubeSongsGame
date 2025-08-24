@@ -340,7 +340,23 @@ def main():
             
             # Display video
             st.subheader("🎵 Listen and Guess!")
-            st.video(f"https://www.youtube.com/watch?v={current_video_id}")
+            
+            # Warning about video availability
+            st.warning("⚠️ Note: Some videos may be unavailable due to regional restrictions or copyright issues.")
+            
+            # Auto-play video with JavaScript
+            st.markdown(f"""
+            <div style="margin: 20px 0;">
+                <iframe 
+                    width="100%" 
+                    height="400" 
+                    src="https://www.youtube.com/embed/{current_video_id}?autoplay=1&mute=0" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+            """, unsafe_allow_html=True)
             
             # Reveal button functionality
             if st.button("🎯 Reveal Answer", key="reveal_answer_song"):
@@ -350,7 +366,7 @@ def main():
                 st.write("Artist: [To be implemented]")
                 st.markdown('</div>', unsafe_allow_html=True)
         else:
-            st.info("👆 Enter a prompt in the sidebar and click 'Generate Videos' to start playing!")
+            st.info("👆 Enter a prompt and click 'Generate Videos' to start playing!")
     
         # Movie Quotes Game Tab
     with tab2:
